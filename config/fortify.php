@@ -73,7 +73,7 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/admin',
 
     /*
     |--------------------------------------------------------------------------
@@ -161,7 +161,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Public registration is disabled: accounts are created by
+        // administrators (php artisan admin:create).
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

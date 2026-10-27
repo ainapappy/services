@@ -20,6 +20,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'module' => EnsureModuleEnabled::class,
         ]);
 
+        // Authenticated users hitting guest-only screens (login, register,
+        // password reset) land on the back-office dashboard.
+        $middleware->redirectUsersTo(fn (): string => route('admin.dashboard'));
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

@@ -1,9 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import type { DefineComponent } from 'vue';
 import { initializeTheme } from '@/composables/useAppearance';
-import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -40,17 +38,15 @@ void createInertiaApp({
     },
     layout: (name) => {
         switch (true) {
-            case name === 'Welcome':
-                return null;
             case name.startsWith('auth/'):
+                // Écrans Fortify hors périmètre (2FA, confirmation de mot de
+                // passe) : conservent la charte du starter.
                 return AuthLayout;
-            case name.startsWith('settings/'):
-                return [AppLayout, SettingsLayout];
             case name.startsWith('front/') || name.startsWith('back/'):
                 // Les pages front/ et back/ portent leur layout elles-mêmes.
                 return null;
             default:
-                return AppLayout;
+                return null;
         }
     },
     withApp: (app) => {
