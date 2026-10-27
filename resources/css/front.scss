@@ -1,0 +1,22 @@
+/* Charte FRONT-OFFICE (vitrine claire) - entree Vite dediee.
+   Aucune regle partagee avec back.scss hors tokens.css.
+   Les classes metier sont portees par les composants front/. */
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Le fond de page est porte par html (body transparent) pour preserver
+   les futurs halos -z-10. Regles hors layer pour battre tout ce qui est
+   layere (Tailwind, styles inline du starter). */
+html,
+html.dark {
+    background-color: var(--color-bg);
+}
+
+html {
+    font-family: var(--font-sans);
+}
+
+body {
+    background: transparent;
+    color: var(--color-ink);
+}

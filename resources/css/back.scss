@@ -1,0 +1,50 @@
+/* Charte BACK-OFFICE (coquille admin) - entree Vite dediee.
+   Aucune regle partagee avec front.scss hors tokens.css. */
+@import 'tailwindcss';
+@import './tokens.css';
+
+/* Meme convention que le front : fond porte par html, body transparent.
+   Meme valeur que la charte front -> aucun conflit de cascade. */
+html,
+html.dark {
+    background-color: var(--color-bg);
+}
+
+html {
+    font-family: var(--font-sans);
+}
+
+body {
+    background: transparent;
+    color: var(--color-ink);
+}
+
+/* Etats de la barre laterale : sidebar sombre (--color-ink), etat actif
+   accentue (--color-accent). Consommés par back/layouts/BackLayout.vue. */
+.back-nav-item {
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.64);
+    cursor: default;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.5rem 0.75rem;
+    transition:
+        background-color 150ms ease,
+        color 150ms ease;
+}
+
+.back-nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.back-nav-item[aria-current='page'] {
+    background-color: var(--color-accent);
+    color: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .back-nav-item {
+        transition: none;
+    }
+}

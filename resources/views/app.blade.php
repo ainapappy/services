@@ -36,7 +36,14 @@
 
         @fonts
 
-        @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
+        @php
+            $component = $page['component'];
+            $pageEntry = preg_match('#^(front|back)/#', $component) === 1
+                ? 'resources/js/' . preg_replace('#^([^/]+)/#', '$1/pages/', $component, 1) . '.vue'
+                : "resources/js/pages/{$component}.vue";
+        @endphp
+
+        @vite(['resources/css/app.css', 'resources/js/app.ts', $pageEntry])
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>
