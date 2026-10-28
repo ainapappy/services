@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Landing\Http\Controllers\Front\LandingPageController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -12,7 +13,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::inertia('/', 'front/Home')->name('home');
+Route::get('/', [LandingPageController::class, 'home'])
+    ->middleware('module:landing')
+    ->name('home');
 
 // Public registration is disabled: an explicit, clear message is shown on
 // the login screen instead of an account creation form.
@@ -44,3 +47,17 @@ Route::prefix('admin')
         Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('password', [PasswordController::class, 'update'])->name('password.update');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Landing capture route
+|--------------------------------------------------------------------------
+|
+| Declared last on purpose: "/{slug}" must never shadow the static routes
+| above (nor the ones Fortify and the admin group register before this
+| file loads). The domain routes are declared by LandingServiceProvider.
+*/
+
+Route::get('/{landingPage:slug}', [LandingPageController::class, 'show'])
+    ->middleware('module:landing')
+    ->name('landing.show');

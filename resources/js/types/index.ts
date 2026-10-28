@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './landing';
 export * from './module';
 export * from './navigation';
 export * from './page';

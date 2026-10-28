@@ -6,6 +6,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { AppSharedProps } from '@/types';
 import { dashboard } from '@/routes/admin';
+import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
 import { edit as profileEdit } from '@/routes/admin/profile';
 import { logout } from '@/routes';
@@ -28,8 +29,8 @@ function initials(name: string): string {
         .join('');
 }
 
-/* Navigation principale. Les modules metier n'exposent pas encore d'ecrans :
-   leurs emplacements sont affiches grises avec un repere « a venir ». */
+/* Navigation principale de la section « Général ». L'entrée Modules reste
+   reservee aux administrateurs. */
 const mainLinks = computed(() => {
     const links = [
         { label: 'Tableau de bord', href: dashboard.url(), base: '/admin' },
@@ -46,19 +47,34 @@ const mainLinks = computed(() => {
     return links;
 });
 
-const upcomingModules = [
-    'Landing',
-    'Pricing',
-    'Gateway',
-    'Connectors',
-    'Webhooks',
-    'Monitoring',
+/* Catalogue des modules metier, dans l'ordre du registre. Un module
+   active expose un vrai lien vers son ecran d'administration ; les
+   autres restent grises avec un repere « a venir ». */
+const moduleCatalog = [
+    { slug: 'landing', label: 'Landing' },
+    { slug: 'pricing', label: 'Pricing' },
+    { slug: 'gateway', label: 'Gateway' },
+    { slug: 'connectors', label: 'Connectors' },
+    { slug: 'webhooks', label: 'Webhooks' },
+    { slug: 'monitoring', label: 'Monitoring' },
 ];
+
+const landingEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'landing')
+            ?.enabled ?? false,
+);
+
+const landingIndexUrl = landingIndex.url();
 
 const isActive = (base: string): boolean =>
     base === '/admin' ? page.url === '/admin' : page.url.startsWith(base);
 
 const sectionTitle = computed(() => {
+    if (page.url.startsWith('/admin/landing')) {
+        return 'Landing';
+    }
+
     if (page.url.startsWith('/admin/modules')) {
         return 'Modules';
     }
@@ -155,15 +171,29 @@ function onLogout(): void {
 
                 <div class="flex flex-col gap-1">
                     <p class="back-nav-label">Modules</p>
-                    <span
-                        v-for="module in upcomingModules"
-                        :key="module"
-                        class="back-nav-item back-nav-item--soon flex items-center justify-between"
-                        aria-disabled="true"
+                    <template
+                        v-for="module in moduleCatalog"
+                        :key="module.slug"
                     >
-                        {{ module }}
-                        <span class="back-soon-chip">À venir</span>
-                    </span>
+                        <Link
+                            v-if="module.slug === 'landing' && landingEnabled"
+                            :href="landingIndexUrl"
+                            class="back-nav-item"
+                            :aria-current="
+                                isActive('/admin/landing') ? 'page' : undefined
+                            "
+                        >
+                            {{ module.label }}
+                        </Link>
+                        <span
+                            v-else
+                            class="back-nav-item back-nav-item--soon flex items-center justify-between"
+                            aria-disabled="true"
+                        >
+                            {{ module.label }}
+                            <span class="back-soon-chip">À venir</span>
+                        </span>
+                    </template>
                 </div>
             </nav>
 

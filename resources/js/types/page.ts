@@ -1,5 +1,10 @@
 import type { User } from './auth';
-import type { Module } from './module';
+import type {
+    LandingPageForm,
+    LandingPageListItem,
+    LandingShow,
+} from './landing';
+import type { Module, SharedModule } from './module';
 
 /**
  * Props partagees par toutes les pages Inertia, telles que sérialisées par
@@ -9,10 +14,23 @@ export type AppSharedProps = {
     auth: {
         user: User | null;
     };
+    modules: SharedModule[];
 };
 
-/** Props de la page `front/Home` (vitrine publique). */
-export type FrontHomePageProps = AppSharedProps;
+/** Props de la page `front/Landing/Show` (page vitrine publique). */
+export type FrontLandingShowPageProps = AppSharedProps & {
+    landing: LandingShow;
+};
+
+/** Props de la page `back/Landing/Index` (liste des landing pages). */
+export type BackLandingIndexPageProps = AppSharedProps & {
+    landingPages: LandingPageListItem[];
+};
+
+/** Props de la page `back/Landing/Form` (création et édition). */
+export type BackLandingFormPageProps = AppSharedProps & {
+    landingPage?: LandingPageForm;
+};
 
 /** Props de la page `back/Login` (écran de connexion Fortify). */
 export type BackLoginPageProps = AppSharedProps & {

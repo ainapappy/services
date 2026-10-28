@@ -2,6 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Core\Modules\ModuleDefinition;
+use App\Core\Modules\ModuleRegistry;
+use App\Models\Module;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -35,6 +38,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $enabled = Module::query()->pluck('enabled', 'slug');
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -42,6 +47,13 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user()?->only(['id', 'name', 'email', 'role', 'email_verified_at']),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'modules' => collect(app(ModuleRegistry::class)->all())
+                ->map(fn (ModuleDefinition $module): array => [
+                    'slug' => $module->slug,
+                    'enabled' => (bool) $enabled->get($module->slug, false),
+                ])
+                ->values()
+                ->all(),
         ];
     }
 }

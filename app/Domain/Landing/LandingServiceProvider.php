@@ -2,6 +2,10 @@
 
 namespace App\Domain\Landing;
 
+use App\Domain\Landing\Models\LandingPage;
+use App\Domain\Landing\Policies\LandingPagePolicy;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class LandingServiceProvider extends ServiceProvider
@@ -16,12 +20,16 @@ class LandingServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any domain services.
-     *
-     * Domain routes will be declared here in later phases, wrapped in the
-     * "module:landing" middleware.
      */
     public function boot(): void
     {
-        //
+        Gate::policy(LandingPage::class, LandingPagePolicy::class);
+
+        // The back-office routes live in the domain; the public ones ("home"
+        // and the "/{slug}" capture route) stay in routes/web.php, because
+        // route files load after the providers boot and the capture route
+        // must be registered after every static route.
+        Route::middleware('web')
+            ->group(__DIR__.'/routes/web.php');
     }
 }

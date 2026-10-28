@@ -8,3 +8,12 @@ export type Module = {
     description: string;
     enabled: boolean;
 };
+
+/**
+ * État d'un module partagé à toutes les pages par le middleware
+ * HandleInertiaRequests (version compacte, sans libellés).
+ */
+export type SharedModule = {
+    slug: string;
+    enabled: boolean;
+};
