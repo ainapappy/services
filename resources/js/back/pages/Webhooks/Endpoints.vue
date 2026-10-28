@@ -1,12 +1,27 @@
 <script setup lang="ts">
-// Liste des endpoints webhooks sortants : tableau (url mono tronquee,
-// evenements souscrits en chips, statut actif, creation) avec lien vers le
-// journal des deliveries filtre, edition et suppression avec confirmation.
-// Un secret fraichement cree arrive en flash (`flash.secret`) et s'affiche
-// UNE SEULE FOIS dans un dialogue sans issue (memes mecanique que les cles
-// d'API du module Gateway). Aucun import hors arbre back/.
+// Liste des endpoints webhooks sortants : tableau shadcn (url mono
+// tronquee, evenements souscrits en badges, statut actif, creation) avec
+// lien vers le journal des deliveries filtre et menu d'actions (edition,
+// suppression confirmee par AlertDialog). Un secret fraichement cree ou
+// regenere arrive en flash (`flash.secret`) et s'affiche UNE SEULE FOIS
+// dans un dialogue sans issue (mecanique des cles d'API du module
+// Gateway).
 import { Head, router } from '@inertiajs/vue3';
-import { computed, nextTick, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    ref,
+    watch,
+    type ComponentPublicInstance,
+} from 'vue';
+import {
+    CheckIcon,
+    CopyIcon,
+    EllipsisVerticalIcon,
+    PencilIcon,
+    Trash2Icon,
+    WebhookIcon,
+} from '@lucide/vue';
 import type {
     BackWebhooksEndpointsPageProps,
     WebhookSecretOrigin,
@@ -15,9 +30,53 @@ import { WEBHOOK_SECRET_ORIGIN_KEY } from '@/types';
 import { create, destroy, edit } from '@/routes/admin/webhooks/endpoints';
 import { index as deliveriesIndex } from '@/routes/admin/webhooks/deliveries';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 const props = defineProps<BackWebhooksEndpointsPageProps>();
 
@@ -34,18 +93,11 @@ function formatCreatedAt(value: string): string {
 /* ------------------------------------------------------------------ */
 
 /* Une seule suppression a la fois, comme les autres allers-retours du
-   back-office (le serveur renvoie l'index actualise). */
+   back-office (le serveur renvoie l'index actualise). La confirmation
+   passe par l'AlertDialog de la ligne : l'action declenche la requete. */
 const deletingId = ref<number | null>(null);
 
-function onDestroy(endpointId: number, endpointUrl: string): void {
-    if (
-        !window.confirm(
-            `Supprimer l'endpoint « ${endpointUrl} » ? Les deliveries déjà journalisées seront conservées, mais plus aucun événement ne lui sera envoyé. Cette action est irréversible.`,
-        )
-    ) {
-        return;
-    }
-
+function onDestroy(endpointId: number): void {
     if (deletingId.value !== null) {
         return;
     }
@@ -75,7 +127,7 @@ const secretValue = ref('');
 const secretOrigin = ref<WebhookSecretOrigin>('creation');
 const copied = ref(false);
 const copyFailed = ref(false);
-const copyButtonEl = ref<HTMLButtonElement | null>(null);
+const copyButtonEl = ref<ComponentPublicInstance | null>(null);
 
 const flashedSecret = computed<string | null>(
     () => props.flash?.secret ?? null,
@@ -123,7 +175,7 @@ watch(secretDialogOpen, async (open) => {
     }
 
     await nextTick();
-    copyButtonEl.value?.focus();
+    copyButtonEl.value?.$el?.focus();
 });
 
 async function copySecret(): Promise<void> {
@@ -176,185 +228,240 @@ const hasEndpoints = computed(() => props.endpoints.length > 0);
         <Head title="Endpoints webhooks" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-wrap items-start justify-between gap-4">
-                <div class="flex flex-col gap-1">
-                    <h1
-                        class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
-                        Endpoints webhooks
-                    </h1>
-                    <p class="text-sm text-[var(--color-muted)]">
-                        Poussez les événements du domaine (landing publiée,
-                        pricing publié, statut de connecteur) vers vos URLs,
-                        avec payloads signés et journal des tentatives.
-                    </p>
-                </div>
-
-                <a
-                    :href="create.url()"
-                    class="back-btn back-btn--primary shrink-0"
-                >
-                    Nouvel endpoint
-                </a>
-            </header>
+            <BackPageHeader
+                title="Endpoints webhooks"
+                description="Poussez les événements du domaine (landing publiée, pricing publié, statut de connecteur) vers vos URLs, avec payloads signés et journal des tentatives."
+            >
+                <template #actions>
+                    <Button as-child>
+                        <a :href="create.url()">Nouvel endpoint</a>
+                    </Button>
+                </template>
+            </BackPageHeader>
 
             <!-- Etat vide -->
-            <BackEmptyState v-if="!hasEndpoints" title="Aucun endpoint">
-                Déclarez votre premier endpoint : il recevra les événements
-                cochés avec un payload signé (HMAC-SHA256) vérifiable via son
-                secret.
-                <template #action>
-                    <a :href="create.url()" class="back-btn back-btn--primary">
-                        Créer un endpoint
-                    </a>
-                </template>
-            </BackEmptyState>
+            <Empty v-if="!hasEndpoints" class="border border-dashed">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <WebhookIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucun endpoint</EmptyTitle>
+                    <EmptyDescription>
+                        Déclarez votre premier endpoint : il recevra les
+                        événements cochés avec un payload signé (HMAC-SHA256)
+                        vérifiable via son secret.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button as-child>
+                        <a :href="create.url()">Créer un endpoint</a>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Tableau -->
-            <div v-else class="back-card overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">
+            <div v-else class="overflow-hidden rounded-xl border">
+                <Table>
+                    <TableCaption class="sr-only">
                         Endpoints webhooks : url, événements souscrits, statut,
                         création et actions
-                    </caption>
-                    <thead>
-                        <tr
-                            class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                        >
-                            <th scope="col" class="px-6 py-3">Endpoint</th>
-                            <th scope="col" class="px-6 py-3">Événements</th>
-                            <th scope="col" class="px-6 py-3">Statut</th>
-                            <th scope="col" class="px-6 py-3">Créé le</th>
-                            <th scope="col" class="px-6 py-3 text-right">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Endpoint
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Événements
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Statut
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Créé le
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-right text-xs tracking-wide uppercase"
+                            >
                                 Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
                             v-for="endpoint in endpoints"
                             :key="endpoint.id"
-                            class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                         >
-                            <td class="px-6 py-4">
+                            <TableCell class="px-4 py-4 align-top">
                                 <p
-                                    class="max-w-[18rem] truncate font-mono text-xs text-[var(--color-ink)]"
+                                    class="max-w-[18rem] truncate font-mono text-xs"
                                     :title="endpoint.url"
                                 >
                                     {{ endpoint.url }}
                                 </p>
-                                <p
-                                    class="mt-0.5 text-xs text-[var(--color-muted)]"
-                                >
+                                <p class="mt-0.5 text-xs text-muted-foreground">
                                     Créé le
                                     {{ formatCreatedAt(endpoint.createdAt) }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
                                 <div class="flex flex-wrap gap-1.5">
-                                    <span
+                                    <Badge
                                         v-for="event in endpoint.events"
                                         :key="event"
-                                        class="back-chip"
+                                        variant="outline"
+                                        class="font-mono"
                                     >
                                         {{ event }}
-                                    </span>
+                                    </Badge>
                                     <span
                                         v-if="endpoint.events.length === 0"
-                                        class="text-[var(--color-muted)]"
+                                        class="text-muted-foreground"
                                     >
                                         —
                                     </span>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
+                                <Badge
                                     :variant="
-                                        endpoint.active ? 'success' : 'muted'
+                                        endpoint.active
+                                            ? 'success'
+                                            : 'secondary'
                                     "
                                 >
                                     {{ endpoint.active ? 'Actif' : 'Inactif' }}
-                                </BackBadge>
-                            </td>
-                            <td class="px-6 py-4 text-[var(--color-ink)]">
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
                                 {{ formatCreatedAt(endpoint.createdAt) }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div
-                                    class="flex items-center justify-end gap-3"
-                                >
-                                    <a
-                                        :href="
-                                            deliveriesIndex.url({
-                                                query: {
-                                                    endpoint: endpoint.id,
-                                                },
-                                            })
-                                        "
-                                        class="back-link"
-                                    >
-                                        Deliveries ({{
-                                            endpoint.deliveriesCount.toLocaleString(
-                                                'fr-FR',
-                                            )
-                                        }})
-                                    </a>
-                                    <a
-                                        :href="
-                                            edit({
-                                                webhookEndpoint: endpoint.id,
-                                            }).url
-                                        "
-                                        class="back-link"
-                                    >
-                                        Éditer
-                                    </a>
-                                    <BackButton
-                                        variant="danger"
-                                        :loading="deletingId === endpoint.id"
-                                        :disabled="
-                                            deletingId !== null &&
-                                            deletingId !== endpoint.id
-                                        "
-                                        @click="
-                                            onDestroy(endpoint.id, endpoint.url)
-                                        "
-                                    >
-                                        Supprimer
-                                    </BackButton>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 text-right align-top">
+                                <div class="flex justify-end">
+                                    <AlertDialog>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    :aria-label="`Actions pour l'endpoint ${endpoint.url}`"
+                                                >
+                                                    <EllipsisVerticalIcon />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                class="w-48"
+                                            >
+                                                <DropdownMenuItem as-child>
+                                                    <a
+                                                        :href="
+                                                            edit({
+                                                                webhookEndpoint:
+                                                                    endpoint.id,
+                                                            }).url
+                                                        "
+                                                    >
+                                                        <PencilIcon />
+                                                        Éditer
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <AlertDialogTrigger as-child>
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                    >
+                                                        <Trash2Icon />
+                                                        Supprimer
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Supprimer l'endpoint «
+                                                    {{ endpoint.url }} » ?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Les deliveries déjà
+                                                    journalisées seront
+                                                    conservées, mais plus aucun
+                                                    événement ne lui sera
+                                                    envoyé. Cette action est
+                                                    irréversible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Annuler
+                                                </AlertDialogCancel>
+                                                <AlertDialogAction as-child>
+                                                    <Button
+                                                        variant="destructive"
+                                                        :disabled="
+                                                            deletingId !== null
+                                                        "
+                                                        @click="
+                                                            onDestroy(
+                                                                endpoint.id,
+                                                            )
+                                                        "
+                                                    >
+                                                        <Spinner
+                                                            v-if="
+                                                                deletingId ===
+                                                                endpoint.id
+                                                            "
+                                                            class="size-4"
+                                                        />
+                                                        Supprimer
+                                                    </Button>
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
         </section>
 
         <!-- Dialogue « secret visible une seule fois » : sans issue, la
              fermeture passe uniquement par « J'ai copié » (rechargement). -->
-        <div v-if="secretDialogOpen" class="back-modal-overlay">
-            <div
-                class="back-modal"
+        <Dialog
+            :open="secretDialogOpen"
+            @update:open="secretDialogOpen = $event"
+        >
+            <DialogContent
+                class="sm:max-w-md"
+                :show-close-button="false"
                 role="alertdialog"
                 aria-modal="true"
-                aria-labelledby="webhooks-secret-title"
-                aria-describedby="webhooks-secret-description"
+                @escape-key-down.prevent
+                @pointer-down-outside.prevent
+                @interact-outside.prevent
             >
-                <div class="flex flex-col gap-4 px-6 py-6">
-                    <h2
-                        id="webhooks-secret-title"
-                        class="text-lg font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
+                <DialogHeader>
+                    <DialogTitle>
                         {{
                             secretOrigin === 'regeneration'
                                 ? 'Nouveau secret généré'
                                 : 'Copiez ce secret maintenant'
                         }}
-                    </h2>
-                    <p
-                        id="webhooks-secret-description"
-                        class="text-sm text-[var(--color-muted)]"
-                    >
+                    </DialogTitle>
+                    <DialogDescription>
                         <template v-if="secretOrigin === 'regeneration'">
                             L'ancien secret cesse immédiatement de fonctionner :
                             mettez à jour votre endpoint avec ce nouveau secret.
@@ -367,35 +474,42 @@ const hasEndpoints = computed(() => props.endpoints.length > 0);
                             votre gestionnaire de secrets — c'est lui qui signe
                             (HMAC-SHA256) les payloads envoyés à votre endpoint.
                         </template>
-                    </p>
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <p class="back-secret-box">{{ secretValue }}</p>
+                <p
+                    class="rounded-md bg-muted px-3 py-2 font-mono text-xs break-all select-all"
+                >
+                    {{ secretValue }}
+                </p>
 
-                    <p v-if="copyFailed" class="back-error" role="alert">
-                        Copie impossible : sélectionnez le secret ci-dessus à la
-                        souris pour le copier manuellement.
-                    </p>
-                    <span v-else class="sr-only" role="status">
-                        {{
-                            copied ? 'Secret copié dans le presse-papiers.' : ''
-                        }}
-                    </span>
+                <p
+                    v-if="copyFailed"
+                    class="text-sm text-destructive"
+                    role="alert"
+                >
+                    Copie impossible : sélectionnez le secret ci-dessus à la
+                    souris pour le copier manuellement.
+                </p>
+                <span v-else class="sr-only" role="status">
+                    {{ copied ? 'Secret copié dans le presse-papiers.' : '' }}
+                </span>
 
-                    <div class="flex items-center justify-end gap-3">
-                        <button
-                            ref="copyButtonEl"
-                            type="button"
-                            class="back-btn back-btn--primary"
-                            @click="copySecret"
-                        >
-                            {{ copied ? 'Copié' : 'Copier' }}
-                        </button>
-                        <BackButton @click="onSecretCopied">
-                            J'ai copié
-                        </BackButton>
-                    </div>
-                </div>
-            </div>
-        </div>
+                <DialogFooter>
+                    <Button
+                        ref="copyButtonEl"
+                        type="button"
+                        @click="copySecret"
+                    >
+                        <CheckIcon v-if="copied" />
+                        <CopyIcon v-else />
+                        {{ copied ? 'Copié' : 'Copier' }}
+                    </Button>
+                    <Button type="button" @click="onSecretCopied">
+                        J'ai copié
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </BackLayout>
 </template>

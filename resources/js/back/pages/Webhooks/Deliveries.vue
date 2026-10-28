@@ -1,11 +1,12 @@
 <script setup lang="ts">
 // Journal des deliveries webhooks : filtres (statut, evenement, endpoint)
-// appliques via query params Inertia (preserveState), tableau (evenement,
-// endpoint, badge de statut, tentatives, code reponse, duree, dates) et
-// acces au detail. Etat vide explicite et etat « aucun resultat pour ces
-// filtres » avec reinitialisation. Aucun import hors arbre back/.
+// en selects shadcn appliques via query params Inertia (preserveState),
+// tableau (evenement, endpoint, badge de statut, tentatives, code
+// reponse, duree, dates) et acces au detail. Deux etats vides explicites :
+// aucun resultat pour ces filtres (avec reinitialisation) et aucun envoi.
 import { Head, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { RotateCcwIcon, SearchXIcon, WebhookIcon } from '@lucide/vue';
 import type {
     BackWebhooksDeliveriesPageProps,
     WebhookDeliveryStatus,
@@ -17,22 +18,55 @@ import {
 } from '@/types';
 import { index, show } from '@/routes/admin/webhooks/deliveries';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Field, FieldLabel } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 const props = defineProps<BackWebhooksDeliveriesPageProps>();
 
 /* ------------------------------------------------------------------ */
-/* Libelles et variants de la charte                                    */
+/* Libelles et variants de badges                                       */
 /* ------------------------------------------------------------------ */
 
+/* Options du filtre de statut : couples (valeur, libelle). */
+const statusOptions = Object.entries(WEBHOOK_DELIVERY_STATUS_LABELS) as Array<
+    [WebhookDeliveryStatus, string]
+>;
+
+/* Variante de Badge associee a chaque statut de delivery (ui shadcn). */
 const statusVariants: Record<
     WebhookDeliveryStatus,
-    'success' | 'danger' | 'muted'
+    'success' | 'destructive' | 'secondary'
 > = {
-    pending: 'muted',
+    pending: 'secondary',
     success: 'success',
-    failed: 'danger',
+    failed: 'destructive',
 };
 
 /* ------------------------------------------------------------------ */
@@ -94,6 +128,23 @@ function applyFilters(): void {
     router.get(index.url(), activeQuery(), { preserveState: true });
 }
 
+/* Changement d'un select de filtre : l'etat local est mis a jour puis la
+   liste rechargee immediatement (equivalent de l'ancien @change). */
+function onFilterStatusChange(value: unknown): void {
+    filterStatus.value = String(value);
+    applyFilters();
+}
+
+function onFilterEventChange(value: unknown): void {
+    filterEvent.value = String(value);
+    applyFilters();
+}
+
+function onFilterEndpointChange(value: unknown): void {
+    filterEndpoint.value = String(value);
+    applyFilters();
+}
+
 function resetFilters(): void {
     filterStatus.value = '';
     filterEvent.value = '';
@@ -149,173 +200,208 @@ function formatResponseCode(responseCode: number | null): string {
         <Head title="Deliveries webhooks" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    Deliveries webhooks
-                </h1>
-                <p class="text-sm text-[var(--color-muted)]">
-                    Journal des envois vers les endpoints : tentatives, code de
-                    réponse, durée et erreurs. Une delivery échouée peut être
-                    relancée depuis son détail.
-                </p>
-            </header>
+            <BackPageHeader
+                title="Journal des envois"
+                description="Journal des envois vers les endpoints : tentatives, code de réponse, durée et erreurs. Une delivery échouée peut être relancée depuis son détail."
+            />
 
             <!-- Filtres -->
-            <div class="back-card back-filters px-6 py-4">
-                <div class="back-filter min-w-40">
-                    <label class="back-help" for="filter-status">
-                        Statut
-                    </label>
-                    <select
-                        id="filter-status"
-                        v-model="filterStatus"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Tous les statuts</option>
-                        <option
-                            v-for="(
-                                label, status
-                            ) in WEBHOOK_DELIVERY_STATUS_LABELS"
-                            :key="status"
-                            :value="status"
+            <Card>
+                <CardContent class="flex flex-wrap items-end gap-4">
+                    <Field class="w-auto min-w-40">
+                        <FieldLabel for="filter-status">Statut</FieldLabel>
+                        <Select
+                            :model-value="filterStatus"
+                            @update:model-value="onFilterStatusChange"
                         >
-                            {{ label }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-status" class="w-full">
+                                <SelectValue placeholder="Tous les statuts" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="[value, label] in statusOptions"
+                                    :key="value"
+                                    :value="value"
+                                >
+                                    {{ label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <div class="back-filter min-w-40">
-                    <label class="back-help" for="filter-event">
-                        Événement
-                    </label>
-                    <select
-                        id="filter-event"
-                        v-model="filterEvent"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Tous les événements</option>
-                        <option
-                            v-for="event in eventOptions"
-                            :key="event"
-                            :value="event"
+                    <Field class="w-auto min-w-40">
+                        <FieldLabel for="filter-event">Événement</FieldLabel>
+                        <Select
+                            :model-value="filterEvent"
+                            @update:model-value="onFilterEventChange"
                         >
-                            {{ webhookEventLabel(event) }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-event" class="w-full">
+                                <SelectValue
+                                    placeholder="Tous les événements"
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="event in eventOptions"
+                                    :key="event"
+                                    :value="event"
+                                >
+                                    {{ webhookEventLabel(event) }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <div class="back-filter min-w-52">
-                    <label class="back-help" for="filter-endpoint">
-                        Endpoint
-                    </label>
-                    <select
-                        id="filter-endpoint"
-                        v-model="filterEndpoint"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Tous les endpoints</option>
-                        <option
-                            v-for="endpoint in endpoints"
-                            :key="endpoint.id"
-                            :value="String(endpoint.id)"
+                    <Field class="w-auto min-w-52">
+                        <FieldLabel for="filter-endpoint">Endpoint</FieldLabel>
+                        <Select
+                            :model-value="filterEndpoint"
+                            @update:model-value="onFilterEndpointChange"
                         >
-                            {{ endpoint.url }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-endpoint" class="w-full">
+                                <SelectValue placeholder="Tous les endpoints" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="endpoint in endpoints"
+                                    :key="endpoint.id"
+                                    :value="String(endpoint.id)"
+                                >
+                                    {{ endpoint.url }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <button
-                    v-if="hasActiveFilters"
-                    type="button"
-                    class="back-btn back-btn--secondary"
-                    @click="resetFilters"
-                >
-                    Réinitialiser
-                </button>
-            </div>
-
-            <!-- Etat vide : aucun resultat pour ces filtres -->
-            <BackEmptyState
-                v-if="deliveries.length === 0 && hasActiveFilters"
-                title="Aucune delivery pour ces filtres"
-            >
-                Aucun envoi journalisé ne correspond au statut, à l'événement ou
-                à l'endpoint sélectionné.
-                <template #action>
-                    <button
-                        type="button"
-                        class="back-btn back-btn--secondary"
+                    <Button
+                        v-if="hasActiveFilters"
+                        variant="ghost"
+                        size="sm"
                         @click="resetFilters"
                     >
+                        <RotateCcwIcon />
+                        Réinitialiser
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <!-- Etat vide : aucun resultat pour ces filtres -->
+            <Empty
+                v-if="deliveries.length === 0 && hasActiveFilters"
+                class="rounded-xl border"
+            >
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <SearchXIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucune delivery pour ces filtres</EmptyTitle>
+                    <EmptyDescription>
+                        Aucun envoi journalisé ne correspond au statut, à
+                        l'événement ou à l'endpoint sélectionné.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button variant="outline" @click="resetFilters">
                         Réinitialiser les filtres
-                    </button>
-                </template>
-            </BackEmptyState>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Etat vide : aucune delivery du tout -->
-            <BackEmptyState
+            <Empty
                 v-else-if="deliveries.length === 0"
-                title="Aucune delivery"
+                class="rounded-xl border"
             >
-                Les envois apparaîtront ici dès qu'un événement souscrit par un
-                endpoint actif sera déclenché (publication d'une landing, d'une
-                table de prix, changement de statut d'un connecteur).
-            </BackEmptyState>
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <WebhookIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucune delivery</EmptyTitle>
+                    <EmptyDescription>
+                        Les envois apparaîtront ici dès qu'un événement souscrit
+                        par un endpoint actif sera déclenché (publication d'une
+                        landing, d'une table de prix, changement de statut d'un
+                        connecteur).
+                    </EmptyDescription>
+                </EmptyHeader>
+            </Empty>
 
             <!-- Tableau -->
-            <div v-else class="back-card overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">
+            <div v-else class="overflow-hidden rounded-xl border">
+                <Table>
+                    <TableCaption class="sr-only">
                         Deliveries webhooks : événement, endpoint, statut,
                         tentatives, code réponse, durée et dates
-                    </caption>
-                    <thead>
-                        <tr
-                            class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                        >
-                            <th scope="col" class="px-6 py-3">Événement</th>
-                            <th scope="col" class="px-6 py-3">Endpoint</th>
-                            <th scope="col" class="px-6 py-3">Statut</th>
-                            <th scope="col" class="px-6 py-3">Tentatives</th>
-                            <th scope="col" class="px-6 py-3">Code</th>
-                            <th scope="col" class="px-6 py-3">Durée</th>
-                            <th scope="col" class="px-6 py-3">Date</th>
-                            <th scope="col" class="px-6 py-3 text-right">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Événement
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Endpoint
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Statut
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Tentatives
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Code
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Durée
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-xs tracking-wide uppercase"
+                            >
+                                Date
+                            </TableHead>
+                            <TableHead
+                                class="h-12 px-4 text-right text-xs tracking-wide uppercase"
+                            >
                                 Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
                             v-for="delivery in deliveries"
                             :key="delivery.id"
-                            class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                         >
-                            <td class="px-6 py-4">
-                                <p class="font-medium text-[var(--color-ink)]">
+                            <TableCell class="px-4 py-4 align-top">
+                                <Badge variant="outline">
                                     {{ webhookEventLabel(delivery.event) }}
-                                </p>
+                                </Badge>
                                 <p
-                                    class="mt-0.5 font-mono text-xs text-[var(--color-muted)]"
+                                    class="mt-1 font-mono text-xs text-muted-foreground"
                                 >
                                     {{ delivery.event }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
                                 <p
-                                    class="max-w-[16rem] truncate font-mono text-xs text-[var(--color-ink)]"
+                                    class="max-w-[16rem] truncate font-mono text-xs"
                                     :title="delivery.endpointUrl"
                                 >
                                     {{ delivery.endpointUrl }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
+                                <Badge
                                     :variant="statusVariants[delivery.status]"
                                 >
                                     {{
@@ -323,53 +409,45 @@ function formatResponseCode(responseCode: number | null): string {
                                             delivery.status
                                         ]
                                     }}
-                                </BackBadge>
-                            </td>
-                            <td
-                                class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                            >
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top tabular-nums">
                                 {{ delivery.attempts.toLocaleString('fr-FR') }}
-                            </td>
-                            <td
-                                class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                            >
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top tabular-nums">
                                 {{ formatResponseCode(delivery.responseCode) }}
-                            </td>
-                            <td
-                                class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                            >
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top tabular-nums">
                                 {{ formatDuration(delivery.durationMs) }}
-                            </td>
-                            <td class="px-6 py-4 text-[var(--color-ink)]">
-                                <p>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
+                                <p class="tabular-nums">
                                     Créée le
                                     {{ formatDateTime(delivery.createdAt) }}
                                 </p>
                                 <p
                                     v-if="delivery.deliveredAt !== null"
-                                    class="mt-0.5 text-xs text-[var(--color-muted)]"
+                                    class="mt-0.5 text-xs text-muted-foreground tabular-nums"
                                 >
                                     Délivrée le
                                     {{ formatDateTime(delivery.deliveredAt) }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center justify-end">
-                                    <a
-                                        :href="
-                                            show({
-                                                webhookDelivery: delivery.id,
-                                            }).url
-                                        "
-                                        class="back-link"
-                                    >
-                                        Détail
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 text-right align-top">
+                                <a
+                                    :href="
+                                        show({
+                                            webhookDelivery: delivery.id,
+                                        }).url
+                                    "
+                                    class="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                                >
+                                    Détail
+                                </a>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
         </section>
     </BackLayout>

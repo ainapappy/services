@@ -1,13 +1,20 @@
 <script setup lang="ts">
-// Formulaire de creation / edition d'un endpoint webhook : url http(s),
-// cases a cocher des evenements disponibles (libelles francais), bascule
-// d'activation. Le secret n'est jamais rapatrie : en edition, une section
-// dediee permet de le regenerer (confirmation explicite : l'ancien secret
-// cesse de fonctionner). Nouveau secret affiche UNE SEULE FOIS via le
-// flash `flash.secret`, dans le meme dialogue sans issue que les cles
-// d'API du module Gateway. Aucun import hors arbre back/.
+// Formulaire de creation / edition d'un endpoint webhook (shadcn) : url
+// http(s), cases a cocher des evenements disponibles (libelles francais),
+// bascule d'activation. Le secret n'est jamais rapatrie : en edition, une
+// section dediee permet de le regenerer (confirmation explicite :
+// l'ancien secret cesse de fonctionner). Nouveau secret affiche UNE SEULE
+// FOIS via le flash `flash.secret`, dans le meme dialogue sans issue que
+// les cles d'API du module Gateway.
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed, nextTick, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    ref,
+    watch,
+    type ComponentPublicInstance,
+} from 'vue';
+import { CheckIcon, CopyIcon, TriangleAlertIcon } from '@lucide/vue';
 import type {
     BackWebhooksEndpointFormPageProps,
     WebhookSecretOrigin,
@@ -25,12 +32,46 @@ import {
     update,
 } from '@/routes/admin/webhooks/endpoints';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackCard from '../../components/BackCard.vue';
-import BackField from '../../components/BackField.vue';
-import BackInput from '../../components/BackInput.vue';
-import BackStatus from '../../components/BackStatus.vue';
-import BackToggle from '../../components/BackToggle.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 
 const props = defineProps<BackWebhooksEndpointFormPageProps>();
 
@@ -70,6 +111,23 @@ watch(
     },
 );
 
+/* Bascule d'un evenement dans le formulaire : meme semantique que les
+   checkboxes natives liees a un tableau (ajout / retrait). */
+function setEventChecked(event: string, checked: boolean): void {
+    if (checked) {
+        if (!form.events.includes(event)) {
+            form.events.push(event);
+        }
+
+        return;
+    }
+
+    const index = form.events.indexOf(event);
+    if (index !== -1) {
+        form.events.splice(index, 1);
+    }
+}
+
 /* ------------------------------------------------------------------ */
 /* Soumission                                                           */
 /* ------------------------------------------------------------------ */
@@ -102,18 +160,12 @@ function onSubmit(): void {
 /* Regeneration du secret (edition uniquement)                          */
 /* ------------------------------------------------------------------ */
 
+/* La confirmation passe par l'AlertDialog de la section : l'action
+   declenche la requete. */
 const regenerating = ref(false);
 
 function onRegenerate(): void {
     if (existing.value === null || regenerating.value) {
-        return;
-    }
-
-    if (
-        !window.confirm(
-            'Régénérer le secret de cet endpoint ? L’ancien secret cesse immédiatement de fonctionner : les payloads signés avec lui seront rejetés. Le nouveau secret ne sera affiché qu’une seule fois.',
-        )
-    ) {
         return;
     }
 
@@ -167,7 +219,7 @@ const secretDialogOpen = ref(false);
 const secretValue = ref('');
 const copied = ref(false);
 const copyFailed = ref(false);
-const copyButtonEl = ref<HTMLButtonElement | null>(null);
+const copyButtonEl = ref<ComponentPublicInstance | null>(null);
 
 const flashedSecret = computed<string | null>(
     () => props.flash?.secret ?? null,
@@ -195,7 +247,7 @@ watch(secretDialogOpen, async (open) => {
     }
 
     await nextTick();
-    copyButtonEl.value?.focus();
+    copyButtonEl.value?.$el?.focus();
 });
 
 async function copySecret(): Promise<void> {
@@ -245,39 +297,43 @@ function onSecretCopied(): void {
         />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="index.url()" class="back-link">
+            <div class="flex flex-col gap-1">
+                <p class="text-sm text-muted-foreground">
+                    <a
+                        :href="index.url()"
+                        class="text-sm font-medium text-primary underline-offset-4 hover:underline"
+                    >
                         Endpoints webhooks
                     </a>
                     <span class="mx-1">/</span>
                     <span>{{ isEdit ? 'Modifier' : 'Nouvel endpoint' }}</span>
                 </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    {{
+
+                <BackPageHeader
+                    :title="
                         isEdit
                             ? 'Modifier l’endpoint'
                             : 'Nouvel endpoint webhook'
-                    }}
-                </h1>
-            </header>
+                    "
+                />
+            </div>
 
             <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                 <!-- Identite -->
-                <BackCard
-                    title="Endpoint"
-                    description="Destination des événements : une URL http(s) qui recevra des POST signés."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="URL de l'endpoint"
-                            field-id="url"
-                            :error="form.errors.url"
-                            help="Doit répondre en HTTP ou HTTPS : chaque événement souscrit y est envoyé en POST, signé via les en-têtes X-Signature, X-Event et X-Timestamp."
-                        >
-                            <BackInput
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Endpoint</CardTitle>
+                        <CardDescription>
+                            Destination des événements : une URL http(s) qui
+                            recevra des POST signés.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-5">
+                        <Field>
+                            <FieldLabel for="url">
+                                URL de l'endpoint
+                            </FieldLabel>
+                            <Input
                                 id="url"
                                 name="url"
                                 type="url"
@@ -286,140 +342,221 @@ function onSecretCopied(): void {
                                 autocomplete="off"
                                 placeholder="https://exemple.com/webhooks/services"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Doit répondre en HTTP ou HTTPS : chaque
+                                événement souscrit y est envoyé en POST, signé
+                                via les en-têtes X-Signature, X-Event et
+                                X-Timestamp.
+                            </FieldDescription>
+                            <FieldError
+                                :errors="
+                                    form.errors.url
+                                        ? [form.errors.url]
+                                        : undefined
+                                "
+                            />
+                        </Field>
 
-                        <fieldset class="flex flex-col gap-2.5">
-                            <legend class="back-label mb-1">
+                        <fieldset class="flex flex-col gap-3">
+                            <legend class="text-sm font-medium">
                                 Événements souscrits
                             </legend>
-                            <label
+                            <div
                                 v-for="event in WEBHOOK_EVENTS"
                                 :key="event"
-                                class="flex items-start gap-2.5 text-sm text-[var(--color-ink)]"
-                                :for="`event-${event}`"
+                                class="flex items-start gap-2.5"
                             >
-                                <input
+                                <Checkbox
                                     :id="`event-${event}`"
-                                    name="events[]"
-                                    type="checkbox"
-                                    :value="event"
-                                    v-model="form.events"
-                                    class="back-checkbox mt-0.5"
+                                    :model-value="form.events.includes(event)"
+                                    class="mt-0.5"
+                                    @update:model-value="
+                                        (checked) =>
+                                            setEventChecked(
+                                                event,
+                                                checked === true,
+                                            )
+                                    "
                                 />
-                                <span class="flex flex-col">
-                                    <span class="font-medium">
+                                <div class="flex flex-col gap-0.5">
+                                    <FieldLabel :for="`event-${event}`">
                                         {{ WEBHOOK_EVENT_LABELS[event] }}
-                                    </span>
+                                    </FieldLabel>
                                     <span
-                                        class="font-mono text-xs text-[var(--color-muted)]"
+                                        class="font-mono text-xs text-muted-foreground"
                                     >
                                         {{ event }}
                                     </span>
-                                    <span
-                                        class="text-xs text-[var(--color-muted)]"
-                                    >
+                                    <FieldDescription>
                                         {{ WEBHOOK_EVENT_DESCRIPTIONS[event] }}
-                                    </span>
-                                </span>
-                            </label>
-                            <p v-if="form.errors.events" class="back-error">
-                                {{ form.errors.events }}
-                            </p>
+                                    </FieldDescription>
+                                </div>
+                            </div>
+                            <FieldError
+                                :errors="
+                                    form.errors.events
+                                        ? [form.errors.events]
+                                        : undefined
+                                "
+                            />
                         </fieldset>
 
-                        <div class="flex items-center gap-3">
-                            <BackToggle
-                                :checked="form.active"
-                                label="Endpoint actif"
-                                @toggle="form.active = !form.active"
-                            />
-                            <div class="flex flex-col">
-                                <span
-                                    class="text-sm font-medium text-[var(--color-ink)]"
-                                >
-                                    {{ form.active ? 'Actif' : 'Inactif' }}
-                                </span>
-                                <span class="text-xs text-[var(--color-muted)]">
-                                    Un endpoint inactif ne reçoit plus aucun
-                                    événement ; ses deliveries passées restent
-                                    dans le journal.
-                                </span>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-start gap-2.5">
+                                <Switch
+                                    id="endpoint-active"
+                                    v-model="form.active"
+                                />
+                                <div class="flex flex-col gap-0.5">
+                                    <FieldLabel for="endpoint-active">
+                                        Endpoint actif
+                                        <Badge
+                                            :variant="
+                                                form.active
+                                                    ? 'success'
+                                                    : 'secondary'
+                                            "
+                                        >
+                                            {{
+                                                form.active
+                                                    ? 'Actif'
+                                                    : 'Inactif'
+                                            }}
+                                        </Badge>
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Un endpoint inactif ne reçoit plus aucun
+                                        événement ; ses deliveries passées
+                                        restent dans le journal.
+                                    </FieldDescription>
+                                </div>
                             </div>
-                            <p v-if="form.errors.active" class="back-error">
-                                {{ form.errors.active }}
-                            </p>
+                            <FieldError
+                                :errors="
+                                    form.errors.active
+                                        ? [form.errors.active]
+                                        : undefined
+                                "
+                            />
                         </div>
-                    </div>
-                </BackCard>
+                    </CardContent>
+                </Card>
 
                 <!-- Secret (edition uniquement) -->
-                <BackCard
-                    v-if="isEdit"
-                    title="Secret de signature"
-                    description="Sert à signer les payloads (HMAC-SHA256) ; il n'est jamais réaffiché après sa création."
-                >
-                    <div class="flex flex-col gap-4">
-                        <BackStatus tone="warning">
-                            Régénérer le secret est une opération sensible :
-                            l'ancien secret cesse immédiatement de fonctionner
-                            et les payloads signés avec lui seront rejetés par
-                            quiconque vérifie la signature. Le nouveau secret ne
-                            sera affiché qu'une seule fois.
-                        </BackStatus>
+                <Card v-if="isEdit">
+                    <CardHeader>
+                        <CardTitle>Secret de signature</CardTitle>
+                        <CardDescription>
+                            Sert à signer les payloads (HMAC-SHA256) ; il n'est
+                            jamais réaffiché après sa création.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-4">
+                        <Alert variant="warning">
+                            <TriangleAlertIcon />
+                            <AlertDescription>
+                                Régénérer le secret est une opération sensible :
+                                l'ancien secret cesse immédiatement de
+                                fonctionner et les payloads signés avec lui
+                                seront rejetés par quiconque vérifie la
+                                signature. Le nouveau secret ne sera affiché
+                                qu'une seule fois.
+                            </AlertDescription>
+                        </Alert>
 
-                        <div class="flex items-center justify-end">
-                            <BackButton
-                                variant="danger"
-                                :loading="regenerating"
-                                @click="onRegenerate"
-                            >
-                                Régénérer le secret
-                            </BackButton>
+                        <div class="flex justify-end">
+                            <AlertDialog>
+                                <AlertDialogTrigger as-child>
+                                    <Button
+                                        variant="destructive"
+                                        :disabled="regenerating"
+                                    >
+                                        <Spinner
+                                            v-if="regenerating"
+                                            class="size-4"
+                                        />
+                                        Régénérer le secret
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                            Régénérer le secret de cet endpoint
+                                            ?
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            L'ancien secret cesse immédiatement
+                                            de fonctionner : les payloads signés
+                                            avec lui seront rejetés. Le nouveau
+                                            secret ne sera affiché qu'une seule
+                                            fois.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>
+                                            Annuler
+                                        </AlertDialogCancel>
+                                        <AlertDialogAction as-child>
+                                            <Button
+                                                variant="destructive"
+                                                :disabled="regenerating"
+                                                @click="onRegenerate"
+                                            >
+                                                <Spinner
+                                                    v-if="regenerating"
+                                                    class="size-4"
+                                                />
+                                                Régénérer le secret
+                                            </Button>
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
-                    </div>
-                </BackCard>
+                    </CardContent>
+                </Card>
 
                 <!-- Actions -->
-                <div class="flex items-center justify-end gap-3">
-                    <a :href="index.url()" class="back-btn back-btn--secondary">
-                        Annuler
-                    </a>
-                    <BackButton type="submit" :loading="form.processing">
+                <div class="flex items-center justify-end gap-2">
+                    <Button as-child variant="outline">
+                        <a :href="index.url()">Annuler</a>
+                    </Button>
+                    <Button type="submit" :disabled="form.processing">
+                        <Spinner v-if="form.processing" class="size-4" />
                         {{
                             isEdit
                                 ? 'Enregistrer les modifications'
                                 : 'Créer l’endpoint'
                         }}
-                    </BackButton>
+                    </Button>
                 </div>
             </form>
         </section>
 
         <!-- Dialogue « secret visible une seule fois » : sans issue, la
              fermeture passe uniquement par « J'ai copié » (rechargement). -->
-        <div v-if="secretDialogOpen" class="back-modal-overlay">
-            <div
-                class="back-modal"
+        <Dialog
+            :open="secretDialogOpen"
+            @update:open="secretDialogOpen = $event"
+        >
+            <DialogContent
+                class="sm:max-w-md"
+                :show-close-button="false"
                 role="alertdialog"
                 aria-modal="true"
-                aria-labelledby="webhooks-form-secret-title"
-                aria-describedby="webhooks-form-secret-description"
+                @escape-key-down.prevent
+                @pointer-down-outside.prevent
+                @interact-outside.prevent
             >
-                <div class="flex flex-col gap-4 px-6 py-6">
-                    <h2
-                        id="webhooks-form-secret-title"
-                        class="text-lg font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
+                <DialogHeader>
+                    <DialogTitle>
                         {{
                             regenerated
                                 ? 'Nouveau secret généré'
                                 : 'Copiez ce secret maintenant'
                         }}
-                    </h2>
-                    <p
-                        id="webhooks-form-secret-description"
-                        class="text-sm text-[var(--color-muted)]"
-                    >
+                    </DialogTitle>
+                    <DialogDescription>
                         <template v-if="regenerated">
                             L'ancien secret cesse immédiatement de fonctionner :
                             mettez à jour votre endpoint avec ce nouveau secret.
@@ -431,35 +568,42 @@ function onSecretCopied(): void {
                             n'est jamais réaffiché. Rangez-le immédiatement dans
                             votre gestionnaire de secrets.
                         </template>
-                    </p>
+                    </DialogDescription>
+                </DialogHeader>
 
-                    <p class="back-secret-box">{{ secretValue }}</p>
+                <p
+                    class="rounded-md bg-muted px-3 py-2 font-mono text-xs break-all select-all"
+                >
+                    {{ secretValue }}
+                </p>
 
-                    <p v-if="copyFailed" class="back-error" role="alert">
-                        Copie impossible : sélectionnez le secret ci-dessus à la
-                        souris pour le copier manuellement.
-                    </p>
-                    <span v-else class="sr-only" role="status">
-                        {{
-                            copied ? 'Secret copié dans le presse-papiers.' : ''
-                        }}
-                    </span>
+                <p
+                    v-if="copyFailed"
+                    class="text-sm text-destructive"
+                    role="alert"
+                >
+                    Copie impossible : sélectionnez le secret ci-dessus à la
+                    souris pour le copier manuellement.
+                </p>
+                <span v-else class="sr-only" role="status">
+                    {{ copied ? 'Secret copié dans le presse-papiers.' : '' }}
+                </span>
 
-                    <div class="flex items-center justify-end gap-3">
-                        <button
-                            ref="copyButtonEl"
-                            type="button"
-                            class="back-btn back-btn--primary"
-                            @click="copySecret"
-                        >
-                            {{ copied ? 'Copié' : 'Copier' }}
-                        </button>
-                        <BackButton @click="onSecretCopied">
-                            J'ai copié
-                        </BackButton>
-                    </div>
-                </div>
-            </div>
-        </div>
+                <DialogFooter>
+                    <Button
+                        ref="copyButtonEl"
+                        type="button"
+                        @click="copySecret"
+                    >
+                        <CheckIcon v-if="copied" />
+                        <CopyIcon v-else />
+                        {{ copied ? 'Copié' : 'Copier' }}
+                    </Button>
+                    <Button type="button" @click="onSecretCopied">
+                        J'ai copié
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </BackLayout>
 </template>
