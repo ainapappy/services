@@ -1,18 +1,24 @@
 <script setup lang="ts">
-// Page vitrine publique : retranscription du prototype
-// .knowledge/design/landing.html (structure, rythme, animations).
-// Le héros et les CTA viennent des props ; les sections décoratives
-// (console temps réel, marquee, modules, compteurs) gardent les contenus
-// statiques du prototype, générés localement sans réseau.
+// Page vitrine publique sur primitives shadcn (coquille FrontLayout, vitrine
+// toujours sombre) : portage du prototype .knowledge/design/landing.html.
+// Le heros et les CTA viennent des props ; les sections decoratives (console
+// temps reel, marquee, modules, compteurs) gardent les contenus statiques du
+// prototype, generes localement sans reseau.
 import { Head } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { home } from '@/routes';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardAction,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import type { FrontLandingShowPageProps } from '@/types';
+import FrontLayout from '../../layouts/FrontLayout.vue';
 import { vCount } from '../../directives/count';
 import { vReveal } from '../../directives/reveal';
-// Charte front indispensable : sans cet import, aucune regle front-* n'atteint
-// la page (front.css est charge par les pages front, pas par le bundle global).
-import '../../../../css/front.css';
 
 const props = defineProps<FrontLandingShowPageProps>();
 
@@ -26,25 +32,6 @@ const prefersReducedMotion = (): boolean =>
 /* ------------------------------------------------------------------ */
 
 const seoTitle = computed(() => props.landing.seo.title || props.landing.title);
-
-/* ------------------------------------------------------------------ */
-/* Nav : fond translucide au scroll                                    */
-/* ------------------------------------------------------------------ */
-
-const scrolled = ref(false);
-
-const onScroll = (): void => {
-    scrolled.value = window.scrollY > 8;
-};
-
-onMounted(() => {
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-});
-
-onBeforeUnmount(() => {
-    window.removeEventListener('scroll', onScroll);
-});
 
 /* ------------------------------------------------------------------ */
 /* Console « temps réel » : barres d'activité + compteur req/s         */
@@ -201,106 +188,56 @@ const stats = [
 </script>
 
 <template>
-    <div>
+    <FrontLayout>
         <Head :title="seoTitle">
             <meta name="description" :content="props.landing.seo.description" />
         </Head>
 
-        <!-- NAV -->
-        <header class="front-nav" :class="{ 'front-nav--scrolled': scrolled }">
-            <div class="front-nav-inner front-container">
-                <a class="front-brand" :href="home.url()">
-                    <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 32 32"
-                        fill="none"
-                        aria-hidden="true"
-                    >
-                        <defs>
-                            <linearGradient
-                                id="front-brand-lg"
-                                x1="0"
-                                y1="0"
-                                x2="32"
-                                y2="32"
-                            >
-                                <stop stop-color="#6366f1" />
-                                <stop offset="1" stop-color="#8b5cf6" />
-                            </linearGradient>
-                        </defs>
-                        <rect
-                            width="32"
-                            height="32"
-                            rx="9"
-                            fill="url(#front-brand-lg)"
-                        />
-                        <circle cx="10.5" cy="16" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="10.5" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="21.5" r="2.4" fill="#fff" />
-                        <path
-                            d="M12.7 15l6.5-3.6M12.7 17l6.5 3.6"
-                            stroke="#fff"
-                            stroke-width="1.6"
-                        />
-                    </svg>
-                    <span>{{ appName }}&nbsp;<em>Services</em></span>
-                </a>
-                <nav class="front-links" aria-label="Navigation principale">
-                    <a href="#modules">Modules</a>
-                    <a href="#stats">Chiffres</a>
-                    <a href="#commencer">Tarifs</a>
-                </nav>
-                <div class="front-nav-cta">
-                    <a
-                        class="front-cta front-cta-secondary front-cta--sm"
-                        href="#commencer"
-                    >
-                        Voir les tarifs
-                    </a>
-                    <a
-                        class="front-cta front-cta-primary front-cta--sm"
-                        href="#commencer"
-                    >
-                        Commencer
-                    </a>
-                </div>
-            </div>
-        </header>
-
-        <main>
+        <!-- HERO : halos -z-10, grille radiale, console temps reel -->
+        <section class="relative">
             <div class="front-bg-grid" aria-hidden="true"></div>
+            <div class="front-glow front-glow--a" aria-hidden="true"></div>
+            <div class="front-glow front-glow--b" aria-hidden="true"></div>
 
-            <!-- HERO -->
-            <section class="front-hero">
-                <div class="front-glow front-glow--a" aria-hidden="true"></div>
-                <div class="front-glow front-glow--b" aria-hidden="true"></div>
-                <div class="front-container front-hero-grid">
-                    <div class="front-hero-copy">
-                        <p v-reveal class="front-eyebrow">
-                            <span class="dot"></span>
-                            Plateforme de services · Écosystème {{ appName }}
-                        </p>
-                        <h1 v-reveal="{ delay: 80 }" class="front-hero-title">
-                            {{ props.landing.heroTitle }}
-                        </h1>
-                        <p v-reveal="{ delay: 160 }" class="front-lead">
-                            {{ props.landing.heroSubtitle }}
-                        </p>
-                        <div
-                            v-if="props.landing.ctas.length > 0"
-                            v-reveal="{ delay: 240 }"
-                            class="front-hero-actions"
+            <div
+                class="mx-auto grid w-full max-w-6xl items-center gap-14 px-6 py-24 lg:grid-cols-[1.05fr_0.95fr]"
+            >
+                <div>
+                    <Badge v-reveal variant="outline" class="front-eyebrow">
+                        <span class="dot" aria-hidden="true"></span>
+                        Plateforme de services · Écosystème {{ appName }}
+                    </Badge>
+                    <h1
+                        v-reveal="{ delay: 80 }"
+                        class="mt-6 text-4xl font-bold tracking-tight text-balance md:text-6xl"
+                    >
+                        <span
+                            class="bg-linear-to-r from-primary to-violet-500 bg-clip-text text-transparent"
                         >
-                            <template
-                                v-for="cta in props.landing.ctas"
-                                :key="`${cta.label}-${cta.url}`"
+                            {{ props.landing.heroTitle }}
+                        </span>
+                    </h1>
+                    <p
+                        v-reveal="{ delay: 160 }"
+                        class="mt-5 max-w-xl text-lg text-muted-foreground"
+                    >
+                        {{ props.landing.heroSubtitle }}
+                    </p>
+                    <div
+                        v-if="props.landing.ctas.length > 0"
+                        v-reveal="{ delay: 240 }"
+                        class="mt-8 flex flex-wrap gap-3"
+                    >
+                        <template
+                            v-for="cta in props.landing.ctas"
+                            :key="`${cta.label}-${cta.url}`"
+                        >
+                            <Button
+                                v-if="cta.style === 'primary'"
+                                size="lg"
+                                as-child
                             >
-                                <a
-                                    v-if="cta.style === 'primary'"
-                                    class="front-cta front-cta-primary"
-                                    :href="cta.url"
-                                >
+                                <a :href="cta.url">
                                     {{ cta.label }}
                                     <svg
                                         width="16"
@@ -316,153 +253,173 @@ const stats = [
                                         <path d="M5 12h14M13 6l6 6-6 6" />
                                     </svg>
                                 </a>
-                                <a
-                                    v-else
-                                    class="front-cta front-cta-secondary"
-                                    :href="cta.url"
-                                >
-                                    {{ cta.label }}
-                                </a>
-                            </template>
-                        </div>
-                        <p v-reveal="{ delay: 320 }" class="front-trust">
-                            <span>
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.6"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    aria-hidden="true"
-                                >
-                                    <path d="M20 6 9 17l-5-5" />
-                                </svg>
-                                Sans carte bancaire
-                            </span>
-                            <span>
-                                <svg
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2.6"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    aria-hidden="true"
-                                >
-                                    <path d="M20 6 9 17l-5-5" />
-                                </svg>
-                                Opérationnel en 5 minutes
-                            </span>
-                        </p>
+                            </Button>
+                            <Button v-else size="lg" variant="outline" as-child>
+                                <a :href="cta.url">{{ cta.label }}</a>
+                            </Button>
+                        </template>
                     </div>
-
-                    <div
-                        ref="tiltZone"
-                        v-reveal="{ delay: 200 }"
-                        class="front-hero-visual"
-                        @pointermove="tiltEnabled ? onTilt($event) : undefined"
-                        @pointerleave="onTiltLeave"
+                    <p
+                        v-reveal="{ delay: 320 }"
+                        class="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground"
                     >
-                        <div ref="consoleEl" class="front-console">
-                            <div class="front-console-head">
-                                <span class="cdot r"></span
-                                ><span class="cdot y"></span
-                                ><span class="cdot g"></span>
-                                <span class="ctitle">
-                                    passerelle · temps réel
-                                </span>
-                                <span class="badge-live">
-                                    <span class="pulse"></span>LIVE
-                                </span>
-                            </div>
-                            <div class="front-console-metric">
-                                <span class="rps-label">
-                                    requêtes / seconde
-                                </span>
-                                <span class="rps">{{ rps }}</span>
-                            </div>
-                            <div class="front-bars" aria-hidden="true">
-                                <span
-                                    v-for="(bar, index) in bars"
-                                    :key="index"
-                                    :style="{
-                                        height: `${bar}%`,
-                                        animationDelay: motionOk
-                                            ? `${index * 90}ms`
-                                            : undefined,
-                                    }"
-                                ></span>
-                            </div>
-                            <div class="front-console-rows">
-                                <div
-                                    v-for="row in consoleRows"
-                                    :key="row.path"
-                                    class="row"
-                                >
-                                    <code>{{ row.method }}</code>
-                                    <span>{{ row.path }}</span>
-                                    <em :class="row.tone">{{ row.status }}</em>
-                                </div>
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-primary"
+                                aria-hidden="true"
+                            >
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            Sans carte bancaire
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-primary"
+                                aria-hidden="true"
+                            >
+                                <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                            Opérationnel en 5 minutes
+                        </span>
+                    </p>
+                </div>
+
+                <div
+                    ref="tiltZone"
+                    v-reveal="{ delay: 200 }"
+                    class="front-hero-visual mx-auto w-full max-w-[480px]"
+                    @pointermove="tiltEnabled ? onTilt($event) : undefined"
+                    @pointerleave="onTiltLeave"
+                >
+                    <div ref="consoleEl" class="front-console">
+                        <div class="front-console-head">
+                            <span class="cdot r"></span
+                            ><span class="cdot y"></span
+                            ><span class="cdot g"></span>
+                            <span class="ctitle">
+                                passerelle · temps réel
+                            </span>
+                            <span class="badge-live">
+                                <span class="pulse"></span>LIVE
+                            </span>
+                        </div>
+                        <div class="front-console-metric">
+                            <span class="rps-label"> requêtes / seconde </span>
+                            <span class="rps">{{ rps }}</span>
+                        </div>
+                        <div class="front-bars" aria-hidden="true">
+                            <span
+                                v-for="(bar, index) in bars"
+                                :key="index"
+                                :style="{
+                                    height: `${bar}%`,
+                                    animationDelay: motionOk
+                                        ? `${index * 90}ms`
+                                        : undefined,
+                                }"
+                            ></span>
+                        </div>
+                        <div class="front-console-rows">
+                            <div
+                                v-for="row in consoleRows"
+                                :key="row.path"
+                                class="row"
+                            >
+                                <code>{{ row.method }}</code>
+                                <span>{{ row.path }}</span>
+                                <em :class="row.tone">{{ row.status }}</em>
                             </div>
                         </div>
-                        <div class="front-chip front-chip--a">
-                            API Gateway · 200 OK
-                        </div>
-                        <div class="front-chip front-chip--b">
-                            Webhook relancé · 3/3
-                        </div>
+                    </div>
+                    <div class="front-chip front-chip--a">
+                        API Gateway · 200 OK
+                    </div>
+                    <div class="front-chip front-chip--b">
+                        Webhook relancé · 3/3
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- MARQUEE -->
-            <section v-reveal class="front-marquee" aria-label="Intégrations">
-                <p>Ils se branchent en quelques minutes</p>
-                <div class="front-marquee-track" aria-hidden="true">
-                    <span
-                        v-for="pill in marqueeItems"
-                        :key="pill.name"
-                        class="front-pill"
+        <!-- MARQUEE -->
+        <section v-reveal class="front-marquee" aria-label="Intégrations">
+            <p>Ils se branchent en quelques minutes</p>
+            <div class="front-marquee-track" aria-hidden="true">
+                <span
+                    v-for="pill in marqueeItems"
+                    :key="pill.name"
+                    class="front-pill"
+                >
+                    <svg
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        aria-hidden="true"
                     >
-                        <svg
-                            width="15"
-                            height="15"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            aria-hidden="true"
+                        <path v-for="d in pill.icon" :key="d" :d="d" />
+                    </svg>
+                    {{ pill.name }}
+                </span>
+            </div>
+        </section>
+
+        <!-- MODULES -->
+        <section
+            id="modules"
+            class="mx-auto w-full max-w-6xl scroll-mt-20 px-6 py-20"
+        >
+            <div class="mx-auto max-w-2xl text-center">
+                <p
+                    v-reveal
+                    class="text-sm font-semibold tracking-[0.14em] text-primary uppercase"
+                >
+                    Modules
+                </p>
+                <div v-reveal="{ delay: 60 }" class="mt-4">
+                    <h2 class="text-3xl font-bold tracking-tight md:text-4xl">
+                        Quatre modules,
+                        <span
+                            class="bg-linear-to-r from-primary to-violet-500 bg-clip-text text-transparent"
+                            >un seul back-office</span
                         >
-                            <path v-for="d in pill.icon" :key="d" :d="d" />
-                        </svg>
-                        {{ pill.name }}
-                    </span>
+                    </h2>
+                    <p class="mt-4 text-muted-foreground">
+                        Chaque module est un domaine indépendant : activez ce
+                        dont vous avez besoin, quand vous en avez besoin.
+                    </p>
                 </div>
-            </section>
-
-            <!-- MODULES -->
-            <section id="modules" class="front-modules">
-                <div class="front-container">
-                    <span v-reveal class="front-kicker">Modules</span>
-                    <div v-reveal="{ delay: 60 }" class="front-sec-head">
-                        <h2>
-                            Quatre modules,
-                            <span class="front-grad">un seul back-office</span>
-                        </h2>
-                        <p>
-                            Chaque module est un domaine indépendant : activez
-                            ce dont vous avez besoin, quand vous en avez besoin.
-                        </p>
-                    </div>
-                    <div class="front-cards">
-                        <article v-reveal class="front-card">
-                            <div class="icon">
+            </div>
+            <div class="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                <Card
+                    v-reveal
+                    class="bg-card/60 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-primary/40 hover:shadow-lg"
+                >
+                    <CardHeader>
+                        <CardAction>
+                            <div
+                                class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                                aria-hidden="true"
+                            >
                                 <svg
                                     width="22"
                                     height="22"
@@ -472,7 +429,6 @@ const stats = [
                                     stroke-width="1.9"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    aria-hidden="true"
                                 >
                                     <path
                                         d="M12 3l7 3v5c0 4.6-3 8.1-7 10-4-1.9-7-5.4-7-10V6l7-3z"
@@ -480,15 +436,24 @@ const stats = [
                                     <path d="M12 8v4M12 15h.01" />
                                 </svg>
                             </div>
-                            <h3>API Gateway</h3>
-                            <p>
-                                Accès sécurisé aux services et API des
-                                applications : clés, quotas et permissions
-                                granulaires.
-                            </p>
-                        </article>
-                        <article v-reveal="{ delay: 80 }" class="front-card">
-                            <div class="icon">
+                        </CardAction>
+                        <CardTitle class="text-base">API Gateway</CardTitle>
+                        <CardDescription>
+                            Accès sécurisé aux services et API des applications
+                            : clés, quotas et permissions granulaires.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card
+                    v-reveal="{ delay: 80 }"
+                    class="bg-card/60 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-primary/40 hover:shadow-lg"
+                >
+                    <CardHeader>
+                        <CardAction>
+                            <div
+                                class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                                aria-hidden="true"
+                            >
                                 <svg
                                     width="22"
                                     height="22"
@@ -498,7 +463,6 @@ const stats = [
                                     stroke-width="1.9"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    aria-hidden="true"
                                 >
                                     <path
                                         d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"
@@ -508,15 +472,25 @@ const stats = [
                                     />
                                 </svg>
                             </div>
-                            <h3>Connectors</h3>
-                            <p>
-                                WordPress, Caren, Erpen et services externes —
-                                des intégrations prêtes à l'emploi,
-                                configurables en back-office.
-                            </p>
-                        </article>
-                        <article v-reveal="{ delay: 160 }" class="front-card">
-                            <div class="icon">
+                        </CardAction>
+                        <CardTitle class="text-base">Connectors</CardTitle>
+                        <CardDescription>
+                            WordPress, Caren, Erpen et services externes — des
+                            intégrations prêtes à l'emploi, configurables en
+                            back-office.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card
+                    v-reveal="{ delay: 160 }"
+                    class="bg-card/60 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-primary/40 hover:shadow-lg"
+                >
+                    <CardHeader>
+                        <CardAction>
+                            <div
+                                class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                                aria-hidden="true"
+                            >
                                 <svg
                                     width="22"
                                     height="22"
@@ -525,7 +499,6 @@ const stats = [
                                     stroke="currentColor"
                                     stroke-width="1.9"
                                     stroke-linecap="round"
-                                    aria-hidden="true"
                                 >
                                     <path
                                         d="M10 12a2 2 0 1 0 4 0a2 2 0 1 0-4 0"
@@ -535,15 +508,25 @@ const stats = [
                                     />
                                 </svg>
                             </div>
-                            <h3>Webhooks</h3>
-                            <p>
-                                Événements, tentatives, erreurs et relances
-                                automatiques : aucun flux ne se perd entre vos
-                                applications.
-                            </p>
-                        </article>
-                        <article v-reveal="{ delay: 240 }" class="front-card">
-                            <div class="icon">
+                        </CardAction>
+                        <CardTitle class="text-base">Webhooks</CardTitle>
+                        <CardDescription>
+                            Événements, tentatives, erreurs et relances
+                            automatiques : aucun flux ne se perd entre vos
+                            applications.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+                <Card
+                    v-reveal="{ delay: 240 }"
+                    class="bg-card/60 backdrop-blur transition-[border-color,box-shadow] duration-300 hover:border-primary/40 hover:shadow-lg"
+                >
+                    <CardHeader>
+                        <CardAction>
+                            <div
+                                class="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                                aria-hidden="true"
+                            >
                                 <svg
                                     width="22"
                                     height="22"
@@ -553,128 +536,96 @@ const stats = [
                                     stroke-width="1.9"
                                     stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    aria-hidden="true"
                                 >
                                     <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                                 </svg>
                             </div>
-                            <h3>Monitoring</h3>
-                            <p>
-                                État des connexions, journaux et alertes : la
-                                santé de l'écosystème visible en un coup d'œil.
-                            </p>
-                        </article>
-                    </div>
-                </div>
-            </section>
-
-            <!-- STATS -->
-            <section id="stats" class="front-stats">
-                <div class="front-container">
-                    <div v-reveal class="front-stats-panel">
-                        <div
-                            v-for="stat in stats"
-                            :key="stat.label"
-                            class="front-stat"
-                        >
-                            <b
-                                v-count="{
-                                    target: stat.target,
-                                    dec: stat.dec,
-                                    prefix: stat.prefix,
-                                    suffix: stat.suffix,
-                                }"
-                                >0</b
-                            >
-                            <span>{{ stat.label }}</span>
-                        </div>
-                        <div class="front-stat">
-                            <b>24/7</b>
-                            <span>supervision &amp; alertes</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CTA -->
-            <section id="commencer" class="front-cta-section">
-                <div class="front-container">
-                    <div v-reveal class="front-cta-panel">
-                        <h2>Prêt à connecter<br />votre écosystème ?</h2>
-                        <p>
-                            Créez votre passerelle, branchez vos connecteurs et
-                            publiez vos landing pages — depuis une seule
-                            interface.
-                        </p>
-                        <div class="front-cta-actions">
-                            <a
-                                class="front-cta front-cta-light"
-                                href="#commencer"
-                            >
-                                Commencer gratuitement
-                            </a>
-                            <a
-                                class="front-cta front-cta-outline-light"
-                                href="#modules"
-                            >
-                                Revoir les modules
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- FOOTER -->
-        <footer class="front-footer">
-            <div class="front-container front-foot">
-                <a class="front-brand" :href="home.url()">
-                    <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 32 32"
-                        fill="none"
-                        aria-hidden="true"
-                    >
-                        <defs>
-                            <linearGradient
-                                id="front-brand-lg-foot"
-                                x1="0"
-                                y1="0"
-                                x2="32"
-                                y2="32"
-                            >
-                                <stop stop-color="#6366f1" />
-                                <stop offset="1" stop-color="#8b5cf6" />
-                            </linearGradient>
-                        </defs>
-                        <rect
-                            width="32"
-                            height="32"
-                            rx="9"
-                            fill="url(#front-brand-lg-foot)"
-                        />
-                        <circle cx="10.5" cy="16" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="10.5" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="21.5" r="2.4" fill="#fff" />
-                        <path
-                            d="M12.7 15l6.5-3.6M12.7 17l6.5 3.6"
-                            stroke="#fff"
-                            stroke-width="1.6"
-                        />
-                    </svg>
-                    <span>{{ appName }}&nbsp;<em>Services</em></span>
-                </a>
-                <nav aria-label="Liens de pied de page">
-                    <a href="#modules">Modules</a>
-                    <a href="#commencer">Tarifs</a>
-                    <a :href="home.url()">Accueil</a>
-                </nav>
-                <p class="front-copy">
-                    © {{ new Date().getFullYear() }} {{ appName }} — Tous droits
-                    réservés.
-                </p>
+                        </CardAction>
+                        <CardTitle class="text-base">Monitoring</CardTitle>
+                        <CardDescription>
+                            État des connexions, journaux et alertes : la santé
+                            de l'écosystème visible en un coup d'œil.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
             </div>
-        </footer>
-    </div>
+        </section>
+
+        <!-- STATS -->
+        <section
+            id="stats"
+            class="mx-auto w-full max-w-6xl scroll-mt-20 px-6 py-10"
+        >
+            <div
+                v-reveal
+                class="grid grid-cols-2 gap-10 rounded-3xl border border-border/60 bg-card/40 px-6 py-12 text-center backdrop-blur lg:grid-cols-4"
+            >
+                <div
+                    v-for="stat in stats"
+                    :key="stat.label"
+                    class="flex flex-col gap-1"
+                >
+                    <b
+                        v-count="{
+                            target: stat.target,
+                            dec: stat.dec,
+                            prefix: stat.prefix,
+                            suffix: stat.suffix,
+                        }"
+                        class="text-3xl font-semibold tracking-tight tabular-nums md:text-4xl"
+                        >0</b
+                    >
+                    <span class="text-sm text-muted-foreground">
+                        {{ stat.label }}
+                    </span>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <b
+                        class="text-3xl font-semibold tracking-tight tabular-nums md:text-4xl"
+                        >24/7</b
+                    >
+                    <span class="text-sm text-muted-foreground">
+                        supervision &amp; alertes
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section
+            id="commencer"
+            class="mx-auto w-full max-w-6xl scroll-mt-20 px-6 pt-10 pb-24"
+        >
+            <div
+                v-reveal
+                class="relative overflow-hidden rounded-3xl border border-border/60 bg-card px-6 py-20 text-center"
+            >
+                <div
+                    class="pointer-events-none absolute -bottom-56 -left-24 size-105 rounded-full bg-primary/40 blur-[80px]"
+                    aria-hidden="true"
+                ></div>
+                <div
+                    class="pointer-events-none absolute -top-44 -right-20 size-90 rounded-full bg-violet-500/30 blur-[80px]"
+                    aria-hidden="true"
+                ></div>
+                <h2
+                    class="relative text-3xl font-bold tracking-tight md:text-4xl"
+                >
+                    Prêt à connecter<br />votre écosystème ?
+                </h2>
+                <p class="relative mx-auto mt-4 max-w-lg text-muted-foreground">
+                    Créez votre passerelle, branchez vos connecteurs et publiez
+                    vos landing pages — depuis une seule interface.
+                </p>
+                <div class="relative mt-8 flex flex-wrap justify-center gap-3">
+                    <Button as-child>
+                        <a href="#commencer">Commencer gratuitement</a>
+                    </Button>
+                    <Button variant="outline" as-child>
+                        <a href="#modules">Revoir les modules</a>
+                    </Button>
+                </div>
+            </div>
+        </section>
+    </FrontLayout>
 </template>

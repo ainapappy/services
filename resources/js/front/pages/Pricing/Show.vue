@@ -1,50 +1,50 @@
 <script setup lang="ts">
-// Page tarifs publique : retranscription du prototype
-// .knowledge/design/pricing.html (switch mensuel/annuel, plan populaire,
-// FAQ accordéon, CTA final). Titre, plans et FAQ viennent des props ; la
-// bascule des prix est purement locale (les deux prix sont dans les props,
-// aucune requête réseau). Le CTA final et la section « inclus » restent
-// statiques comme dans le prototype.
+// Page tarifs publique sur primitives shadcn (coquille FrontLayout, vitrine
+// toujours sombre) : portage du prototype .knowledge/design/pricing.html.
+// Titre, plans et FAQ viennent des props ; la bascule des prix est purement
+// locale (les deux prix sont dans les props, aucune requete reseau) avec le
+// swap de 180 ms du prototype. Le CTA final et la section « inclus »
+// restent statiques comme dans le prototype.
 import { Head } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { home, pricing } from '@/routes';
+import { Check } from '@lucide/vue';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Item,
+    ItemContent,
+    ItemGroup,
+    ItemMedia,
+    ItemTitle,
+} from '@/components/ui/item';
+import { Switch } from '@/components/ui/switch';
+import { home } from '@/routes';
 import type { FrontPricingShowPageProps, PricingShowPlan } from '@/types';
+import FrontLayout from '../../layouts/FrontLayout.vue';
 import { vReveal } from '../../directives/reveal';
-// Charte front indispensable : sans cet import, aucune regle front-* n'atteint
-// la page (front.css est charge par les pages front, pas par le bundle global).
-import '../../../../css/front.css';
 
 const props = defineProps<FrontPricingShowPageProps>();
 
-const appName = import.meta.env.VITE_APP_NAME || 'Services';
-
 const landingUrl = home.url();
-const pricingUrl = pricing.url();
 
 /* ------------------------------------------------------------------ */
 /* SEO                                                                 */
 /* ------------------------------------------------------------------ */
 
 const seoTitle = computed(() => props.table.title || 'Tarifs');
-
-/* ------------------------------------------------------------------ */
-/* Nav : fond translucide au scroll                                    */
-/* ------------------------------------------------------------------ */
-
-const scrolled = ref(false);
-
-const onScroll = (): void => {
-    scrolled.value = window.scrollY > 8;
-};
-
-onMounted(() => {
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-});
-
-onBeforeUnmount(() => {
-    window.removeEventListener('scroll', onScroll);
-});
 
 /* ------------------------------------------------------------------ */
 /* Switch mensuel / annuel : bascule locale avec swap des prix         */
@@ -134,17 +134,6 @@ function billNote(plan: PricingShowPlan): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* FAQ accordéon : un seul panneau ouvert à la fois                    */
-/* ------------------------------------------------------------------ */
-
-const openQuestion = ref<number | null>(null);
-
-function toggleQuestion(questionIndex: number): void {
-    openQuestion.value =
-        openQuestion.value === questionIndex ? null : questionIndex;
-}
-
-/* ------------------------------------------------------------------ */
 /* Section « inclus » : contenus statiques du prototype                */
 /* ------------------------------------------------------------------ */
 
@@ -174,353 +163,251 @@ const includes = [
 </script>
 
 <template>
-    <div>
+    <FrontLayout>
         <Head :title="seoTitle">
             <meta name="description" :content="props.table.subtitle" />
         </Head>
 
-        <!-- NAV -->
-        <header class="front-nav" :class="{ 'front-nav--scrolled': scrolled }">
-            <div class="front-nav-inner front-container">
-                <a class="front-brand" :href="landingUrl">
-                    <svg
-                        width="28"
-                        height="28"
-                        viewBox="0 0 32 32"
-                        fill="none"
-                        aria-hidden="true"
+        <!-- HERO + SWITCH -->
+        <section class="relative">
+            <div class="front-bg-grid" aria-hidden="true"></div>
+            <div class="front-glow front-glow--top" aria-hidden="true"></div>
+
+            <div class="mx-auto w-full max-w-6xl px-6 pt-24 pb-4 text-center">
+                <Badge v-reveal variant="outline" class="front-eyebrow">
+                    Tarifs
+                </Badge>
+                <h1
+                    v-reveal="{ delay: 60 }"
+                    class="mt-6 text-4xl font-bold tracking-tight text-balance md:text-6xl"
+                >
+                    <span
+                        class="bg-linear-to-r from-primary to-violet-500 bg-clip-text text-transparent"
                     >
-                        <defs>
-                            <linearGradient
-                                id="front-brand-lg"
-                                x1="0"
-                                y1="0"
-                                x2="32"
-                                y2="32"
-                            >
-                                <stop stop-color="#6366f1" />
-                                <stop offset="1" stop-color="#8b5cf6" />
-                            </linearGradient>
-                        </defs>
-                        <rect
-                            width="32"
-                            height="32"
-                            rx="9"
-                            fill="url(#front-brand-lg)"
-                        />
-                        <circle cx="10.5" cy="16" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="10.5" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="21.5" r="2.4" fill="#fff" />
-                        <path
-                            d="M12.7 15l6.5-3.6M12.7 17l6.5 3.6"
-                            stroke="#fff"
-                            stroke-width="1.6"
-                        />
-                    </svg>
-                    <span>{{ appName }}&nbsp;<em>Services</em></span>
-                </a>
-                <nav class="front-links" aria-label="Navigation principale">
-                    <a :href="`${landingUrl}#modules`">Modules</a>
-                    <a :href="`${landingUrl}#stats`">Chiffres</a>
-                    <a :href="pricingUrl" class="is-active">Tarifs</a>
-                </nav>
-                <div class="front-nav-cta">
-                    <a
-                        class="front-cta front-cta-secondary front-cta--sm"
-                        :href="landingUrl"
+                        {{ props.table.title }}
+                    </span>
+                </h1>
+                <p
+                    v-reveal="{ delay: 140 }"
+                    class="mx-auto mt-4 max-w-xl text-lg text-muted-foreground"
+                >
+                    {{ props.table.subtitle }}
+                </p>
+
+                <!-- Bascule mensuel / annuel : le Switch pilote la meme
+                     logique de swap de 180 ms que l'ancien radiogroup. -->
+                <div
+                    v-reveal="{ delay: 220 }"
+                    class="mt-10 flex items-center justify-center gap-3"
+                >
+                    <span
+                        class="text-sm"
+                        :class="
+                            annual
+                                ? 'text-muted-foreground'
+                                : 'font-semibold text-foreground'
+                        "
+                        >Mensuel</span
                     >
-                        Accueil
-                    </a>
-                    <a
-                        class="front-cta front-cta-primary front-cta--sm"
-                        href="#commencer"
+                    <Switch
+                        :checked="annual"
+                        aria-label="Périodicité de facturation"
+                        @update:checked="setBilling"
+                    />
+                    <span
+                        class="text-sm"
+                        :class="
+                            annual
+                                ? 'font-semibold text-foreground'
+                                : 'text-muted-foreground'
+                        "
+                        >Annuel</span
                     >
-                        Commencer
-                    </a>
+                    <Badge>-20 %</Badge>
                 </div>
             </div>
-        </header>
+        </section>
 
-        <main>
-            <div class="front-bg-grid" aria-hidden="true"></div>
-
-            <!-- HERO + SWITCH -->
-            <section class="front-hero front-hero--pricing">
-                <div
-                    class="front-glow front-glow--top"
-                    aria-hidden="true"
-                ></div>
-                <div class="front-container">
-                    <p v-reveal class="front-kicker">Tarifs</p>
-                    <h1 v-reveal="{ delay: 60 }" class="front-hero-title">
-                        {{ props.table.title }}
-                    </h1>
-                    <p v-reveal="{ delay: 140 }" class="front-lead">
-                        {{ props.table.subtitle }}
-                    </p>
-                    <div v-reveal="{ delay: 220 }" class="front-switch-wrap">
-                        <div
-                            class="front-switch"
-                            :class="{ 'front-switch--annual': annual }"
-                            role="radiogroup"
-                            aria-label="Périodicité de facturation"
-                        >
+        <!-- PLANS -->
+        <section class="mx-auto w-full max-w-6xl px-6 py-12">
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                <Card
+                    v-for="(plan, index) in props.table.plans"
+                    :key="plan.slug"
+                    v-reveal="{ delay: index * 100 }"
+                    class="relative"
+                    :class="{ 'front-plan--popular': plan.popular }"
+                >
+                    <Badge v-if="plan.popular" class="front-tag-popular">
+                        Populaire
+                    </Badge>
+                    <CardHeader>
+                        <CardTitle class="text-lg">{{ plan.name }}</CardTitle>
+                        <CardDescription v-if="plan.tagline">
+                            {{ plan.tagline }}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-1 flex-col">
+                        <div class="flex items-baseline gap-1.5">
                             <span
-                                class="front-switch-thumb"
-                                aria-hidden="true"
-                            ></span>
-                            <label
-                                class="front-switch-option"
-                                :class="{ on: !annual }"
+                                class="text-xl font-bold text-muted-foreground"
+                                >€</span
                             >
-                                <input
-                                    class="sr-only"
-                                    type="radio"
-                                    name="billing"
-                                    value="monthly"
-                                    :checked="!annual"
-                                    @change="setBilling(false)"
-                                />
-                                Mensuel
-                            </label>
-                            <label
-                                class="front-switch-option"
-                                :class="{ on: annual }"
+                            <span
+                                class="text-5xl font-bold tracking-tight tabular-nums transition-[opacity,transform] duration-180"
+                                :class="{
+                                    'front-price-amount--swap': swapping,
+                                }"
+                                >{{ displayAmount(plan) }}</span
                             >
-                                <input
-                                    class="sr-only"
-                                    type="radio"
-                                    name="billing"
-                                    value="yearly"
-                                    :checked="annual"
-                                    @change="setBilling(true)"
-                                />
-                                Annuel
-                                <span class="front-badge-save">-20 %</span>
-                            </label>
+                            <span class="text-sm text-muted-foreground"
+                                >/ mois</span
+                            >
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- PLANS -->
-            <section class="front-plans">
-                <div class="front-container">
-                    <div class="front-plans-grid">
-                        <article
-                            v-for="(plan, index) in props.table.plans"
-                            :key="plan.slug"
-                            v-reveal="{ delay: index * 100 }"
-                            class="front-plan"
+                        <p
+                            class="mt-1 min-h-5 text-xs text-muted-foreground transition-opacity duration-180"
                             :class="{
-                                'front-plan--popular': plan.popular,
+                                'front-bill-note--swap': swapping,
                             }"
                         >
-                            <span v-if="plan.popular" class="front-tag-popular">
-                                Populaire
-                            </span>
-                            <h3>{{ plan.name }}</h3>
-                            <p v-if="plan.tagline" class="front-plan-desc">
-                                {{ plan.tagline }}
-                            </p>
-                            <div class="front-price">
-                                <span class="cur">€</span>
-                                <span
-                                    class="front-price-amount"
-                                    :class="{
-                                        'front-price-amount--swap': swapping,
-                                    }"
-                                    >{{ displayAmount(plan) }}</span
-                                >
-                                <span class="front-price-per">/ mois</span>
-                            </div>
-                            <p
-                                class="front-bill-note"
-                                :class="{
-                                    'front-bill-note--swap': swapping,
-                                }"
+                            {{ billNote(plan) }}
+                        </p>
+                        <ul class="mt-6 flex-1 space-y-2.5">
+                            <li
+                                v-for="feature in plan.features"
+                                :key="feature"
+                                class="flex items-start gap-2.5 text-sm"
                             >
-                                {{ billNote(plan) }}
-                            </p>
-                            <ul class="front-plan-features">
-                                <li
-                                    v-for="feature in plan.features"
-                                    :key="feature"
-                                >
-                                    {{ feature }}
-                                </li>
-                            </ul>
-                            <a
-                                class="front-cta front-plan-cta"
-                                :class="
-                                    plan.popular
-                                        ? 'front-cta-primary'
-                                        : 'front-cta-secondary'
-                                "
-                                href="#commencer"
-                            >
+                                <Check
+                                    class="mt-0.5 size-4 shrink-0 text-primary"
+                                    aria-hidden="true"
+                                />
+                                <span>{{ feature }}</span>
+                            </li>
+                        </ul>
+                        <Button
+                            class="mt-8 w-full"
+                            :variant="plan.popular ? 'default' : 'outline'"
+                            as-child
+                        >
+                            <a href="#commencer">
                                 {{
                                     plan.popular
                                         ? 'Essai gratuit 14 jours'
                                         : 'Commencer'
                                 }}
                             </a>
-                        </article>
-                    </div>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
 
-                    <p
-                        v-if="props.table.plans.length === 0"
-                        v-reveal
-                        class="front-plans-empty"
-                    >
-                        Aucun plan n'est publié pour le moment.
-                    </p>
-                </div>
-            </section>
+            <p
+                v-if="props.table.plans.length === 0"
+                v-reveal
+                class="py-16 text-center text-muted-foreground"
+            >
+                Aucun plan n'est publié pour le moment.
+            </p>
+        </section>
 
-            <!-- INCLUS -->
-            <section class="front-includes">
-                <div class="front-container">
-                    <h2 v-reveal>Tous les plans incluent</h2>
-                    <div class="front-includes-grid">
-                        <div
-                            v-for="(item, index) in includes"
-                            :key="item.label"
-                            v-reveal="{ delay: index * 60 }"
-                            class="front-inc"
+        <!-- INCLUS -->
+        <section class="mx-auto w-full max-w-6xl px-6 py-12">
+            <h2 v-reveal class="text-center text-2xl font-bold tracking-tight">
+                Tous les plans incluent
+            </h2>
+            <ItemGroup class="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Item
+                    v-for="(item, index) in includes"
+                    :key="item.label"
+                    v-reveal="{ delay: index * 60 }"
+                    variant="outline"
+                    class="bg-card/60"
+                >
+                    <ItemMedia variant="icon" class="text-primary">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.9"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
                         >
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.9"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true"
-                            >
-                                <path v-for="d in item.icon" :key="d" :d="d" />
-                            </svg>
-                            {{ item.label }}
-                        </div>
-                    </div>
-                </div>
-            </section>
+                            <path v-for="d in item.icon" :key="d" :d="d" />
+                        </svg>
+                    </ItemMedia>
+                    <ItemContent>
+                        <ItemTitle>{{ item.label }}</ItemTitle>
+                    </ItemContent>
+                </Item>
+            </ItemGroup>
+        </section>
 
-            <!-- FAQ -->
-            <section v-if="props.table.faq.length > 0" class="front-faq">
-                <h2 v-reveal>Questions fréquentes</h2>
-                <div
+        <!-- FAQ -->
+        <section
+            v-if="props.table.faq.length > 0"
+            class="mx-auto w-full max-w-3xl px-6 py-12"
+        >
+            <h2 v-reveal class="text-center text-2xl font-bold tracking-tight">
+                Questions fréquentes
+            </h2>
+            <Accordion type="single" collapsible class="mt-8">
+                <AccordionItem
                     v-for="(item, index) in props.table.faq"
                     :key="`${index}-${item.question}`"
                     v-reveal="{ delay: index * 60 }"
-                    class="front-faq-item"
-                    :class="{
-                        'front-faq-item--open': openQuestion === index,
-                    }"
+                    :value="`faq-${index}`"
                 >
-                    <button
-                        :id="`faq-button-${index}`"
-                        type="button"
-                        class="front-faq-q"
-                        :aria-expanded="openQuestion === index"
-                        :aria-controls="`faq-panel-${index}`"
-                        @click="toggleQuestion(index)"
-                    >
+                    <AccordionTrigger class="text-sm font-semibold">
                         {{ item.question }}
-                    </button>
-                    <div
-                        v-show="openQuestion === index"
-                        :id="`faq-panel-${index}`"
-                        class="front-faq-a"
-                        role="region"
-                        :aria-labelledby="`faq-button-${index}`"
-                    >
-                        <p>{{ item.answer }}</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CTA -->
-            <section id="commencer" class="front-cta-section">
-                <div class="front-container">
-                    <div v-reveal class="front-cta-panel">
-                        <h2>Essayez la plateforme,<br />sans engagement.</h2>
-                        <p>
-                            14 jours d'essai sur le plan Croissance. Landing
-                            pages, passerelle API et connecteurs inclus dès le
-                            premier jour.
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <p class="text-muted-foreground">
+                            {{ item.answer }}
                         </p>
-                        <div class="front-cta-actions">
-                            <a
-                                class="front-cta front-cta-light"
-                                href="#commencer"
-                            >
-                                Créer mon compte
-                            </a>
-                            <a
-                                class="front-cta front-cta-outline-light"
-                                :href="landingUrl"
-                            >
-                                Revoir la landing
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        </section>
 
-        <!-- FOOTER -->
-        <footer class="front-footer">
-            <div class="front-container front-foot">
-                <a class="front-brand" :href="landingUrl">
-                    <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 32 32"
-                        fill="none"
-                        aria-hidden="true"
-                    >
-                        <defs>
-                            <linearGradient
-                                id="front-brand-lg-foot"
-                                x1="0"
-                                y1="0"
-                                x2="32"
-                                y2="32"
-                            >
-                                <stop stop-color="#6366f1" />
-                                <stop offset="1" stop-color="#8b5cf6" />
-                            </linearGradient>
-                        </defs>
-                        <rect
-                            width="32"
-                            height="32"
-                            rx="9"
-                            fill="url(#front-brand-lg-foot)"
-                        />
-                        <circle cx="10.5" cy="16" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="10.5" r="2.4" fill="#fff" />
-                        <circle cx="21.5" cy="21.5" r="2.4" fill="#fff" />
-                        <path
-                            d="M12.7 15l6.5-3.6M12.7 17l6.5 3.6"
-                            stroke="#fff"
-                            stroke-width="1.6"
-                        />
-                    </svg>
-                    <span>{{ appName }}&nbsp;<em>Services</em></span>
-                </a>
-                <nav aria-label="Liens de pied de page">
-                    <a :href="landingUrl">Landing</a>
-                    <a :href="pricingUrl">Tarifs</a>
-                    <a :href="landingUrl">Accueil</a>
-                </nav>
-                <p class="front-copy">
-                    © {{ new Date().getFullYear() }} {{ appName }} — Tous droits
-                    réservés.
+        <!-- CTA -->
+        <section
+            id="commencer"
+            class="mx-auto w-full max-w-6xl scroll-mt-20 px-6 pt-6 pb-24"
+        >
+            <div
+                v-reveal
+                class="relative overflow-hidden rounded-3xl border border-border/60 bg-card px-6 py-20 text-center"
+            >
+                <div
+                    class="pointer-events-none absolute -bottom-56 -left-24 size-105 rounded-full bg-primary/40 blur-[80px]"
+                    aria-hidden="true"
+                ></div>
+                <div
+                    class="pointer-events-none absolute -top-44 -right-20 size-90 rounded-full bg-violet-500/30 blur-[80px]"
+                    aria-hidden="true"
+                ></div>
+                <h2
+                    class="relative text-3xl font-bold tracking-tight md:text-4xl"
+                >
+                    Essayez la plateforme,<br />sans engagement.
+                </h2>
+                <p class="relative mx-auto mt-4 max-w-lg text-muted-foreground">
+                    14 jours d'essai sur le plan Croissance. Landing pages,
+                    passerelle API et connecteurs inclus dès le premier jour.
                 </p>
+                <div class="relative mt-8 flex flex-wrap justify-center gap-3">
+                    <Button as-child>
+                        <a href="#commencer">Créer mon compte</a>
+                    </Button>
+                    <Button variant="outline" as-child>
+                        <a :href="landingUrl">Revoir la landing</a>
+                    </Button>
+                </div>
             </div>
-        </footer>
-    </div>
+        </section>
+    </FrontLayout>
 </template>
