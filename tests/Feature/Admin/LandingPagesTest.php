@@ -101,7 +101,9 @@ test('administrators and editors can store a landing page', function (string $ro
 
     $this->actingAs($user)
         ->post(route('admin.landing.store'), landingPayload())
-        ->assertRedirect(route('admin.landing.index'));
+        ->assertRedirect(route('admin.landing.index'))
+        ->assertSessionHas('toast', fn (array $toast): bool => $toast['type'] === 'success'
+            && str_contains($toast['message'], 'Nouvelle page'));
 
     $page = LandingPage::query()->where('slug', 'nouvelle-page')->firstOrFail();
 

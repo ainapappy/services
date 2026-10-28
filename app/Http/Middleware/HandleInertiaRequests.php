@@ -63,6 +63,10 @@ class HandleInertiaRequests extends Middleware
                 // status, the latency and a safe error message. Never
                 // the credentials.
                 'testResult' => fn (): ?array => is_array($result = $request->session()->get('testResult')) ? $result : null,
+                // Flashed by back-office actions (e.g. landing creation):
+                // a transient confirmation rendered as a sonner toast by
+                // lib/flashToast.ts.
+                'toast' => fn (): ?array => is_array($toast = $request->session()->get('toast')) ? $toast : null,
             ],
         ];
     }

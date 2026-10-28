@@ -51,9 +51,20 @@ class LandingPageController extends Controller
      */
     public function store(CreateLandingPageRequest $request, CreateLandingPage $action): RedirectResponse
     {
-        $action->handle($request->validated());
+        $landingPage = $action->handle($request->validated());
 
-        return redirect()->route('admin.landing.index');
+        // Pages start as drafts: the confirmation toast names the new
+        // entry so it is easy to spot in the list, and reminds that it
+        // stays invisible on the front-office until published.
+        return redirect()
+            ->route('admin.landing.index')
+            ->with('toast', [
+                'type' => 'success',
+                'message' => sprintf(
+                    'Page « %s » créée en brouillon : publiez-la pour la rendre visible côté vitrine.',
+                    $landingPage->title,
+                ),
+            ]);
     }
 
     /**
