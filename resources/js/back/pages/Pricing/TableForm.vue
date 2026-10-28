@@ -1,18 +1,36 @@
 <script setup lang="ts">
 // Formulaire de creation / edition d'une table de prix : contenu (titre,
 // slug, sous-titre), selection et ordre des plans (le pivot porte le tri),
-// repeateur de FAQ et publication. Aucun import hors arbre back/.
-import { Head, router, useForm } from '@inertiajs/vue3';
+// repeateur de FAQ et publication. Carte unique shadcn par sections.
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import type { BackPricingTableFormPageProps, FaqItem } from '@/types';
 import { index, publish, store, update } from '@/routes/admin/pricing/tables';
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from '@lucide/vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackCard from '../../components/BackCard.vue';
-import BackField from '../../components/BackField.vue';
-import BackInput from '../../components/BackInput.vue';
-import BackStatus from '../../components/BackStatus.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 const props = defineProps<BackPricingTableFormPageProps>();
 
@@ -208,41 +226,28 @@ const publishedAtLabel = computed(() => {
         />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="index.url()" class="back-link">
-                        Tables de prix
-                    </a>
-                    <span class="mx-1">/</span>
-                    <span>{{
-                        isEdit ? existing?.title : 'Nouvelle table'
-                    }}</span>
-                </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    {{
-                        isEdit
-                            ? 'Modifier la table de prix'
-                            : 'Nouvelle table de prix'
-                    }}
-                </h1>
-            </header>
+            <BackPageHeader
+                :title="
+                    isEdit
+                        ? 'Modifier la table de prix'
+                        : 'Nouvelle table de prix'
+                "
+            />
 
             <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
-                <!-- Contenu -->
-                <BackCard
-                    title="Contenu"
-                    description="Titre et sous-titre affichés en haut de la page tarifs."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Titre"
-                            field-id="title"
-                            :error="form.errors.title"
-                            help="Grand titre de la page tarifs."
-                        >
-                            <BackInput
+                <Card>
+                    <!-- Contenu -->
+                    <CardHeader>
+                        <CardTitle>Contenu</CardTitle>
+                        <CardDescription>
+                            Titre et sous-titre affichés en haut de la page
+                            tarifs.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-5">
+                        <Field>
+                            <FieldLabel for="title">Titre</FieldLabel>
+                            <Input
                                 id="title"
                                 name="title"
                                 v-model="form.title"
@@ -250,52 +255,63 @@ const publishedAtLabel = computed(() => {
                                 placeholder="Ex. Un tarif clair, qui grandit avec vous."
                                 @input="onTitleInput"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Grand titre de la page tarifs.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.title]" />
+                        </Field>
 
-                        <BackField
-                            label="Slug"
-                            field-id="slug"
-                            :error="form.errors.slug"
-                            help="Généré depuis le titre, modifiable."
-                        >
-                            <BackInput
+                        <Field>
+                            <FieldLabel for="slug">Slug</FieldLabel>
+                            <Input
                                 id="slug"
                                 name="slug"
                                 v-model="form.slug"
                                 required
+                                class="font-mono"
                                 placeholder="tarifs"
                                 @input="onSlugInput"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Généré depuis le titre, modifiable.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.slug]" />
+                        </Field>
 
-                        <BackField
-                            label="Sous-titre"
-                            field-id="subtitle"
-                            :error="form.errors.subtitle"
-                            help="Phrase d'accroche affichée sous le titre."
-                        >
-                            <textarea
+                        <Field>
+                            <FieldLabel for="subtitle">Sous-titre</FieldLabel>
+                            <Textarea
                                 id="subtitle"
                                 name="subtitle"
                                 v-model="form.subtitle"
-                                rows="3"
+                                :rows="3"
                                 required
-                                class="back-input"
                                 placeholder="Landing pages et tables de prix incluses partout."
-                            ></textarea>
-                        </BackField>
-                    </div>
-                </BackCard>
+                            />
+                            <FieldDescription>
+                                Phrase d'accroche affichée sous le titre.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.subtitle]" />
+                        </Field>
+                    </CardContent>
 
-                <!-- Plans -->
-                <BackCard
-                    title="Plans"
-                    description="Cochez les plans à afficher et ordonnez-les : l'ordre choisi ici est celui de la page tarifs."
-                >
-                    <div class="flex flex-col gap-4">
+                    <Separator />
+
+                    <!-- Plans -->
+                    <CardContent class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Plans
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Cochez les plans à afficher et ordonnez-les :
+                                l'ordre choisi ici est celui de la page tarifs.
+                            </p>
+                        </div>
+
                         <p
                             v-if="props.plans.length === 0"
-                            class="text-sm text-[var(--color-muted)]"
+                            class="text-sm text-muted-foreground"
                         >
                             Aucun plan disponible : créez d'abord des plans
                             tarifaires.
@@ -303,7 +319,7 @@ const publishedAtLabel = computed(() => {
 
                         <p
                             v-else-if="form.plan_ids.length === 0"
-                            class="text-sm text-[var(--color-muted)]"
+                            class="text-sm text-muted-foreground"
                         >
                             Aucun plan sélectionné.
                         </p>
@@ -312,44 +328,51 @@ const publishedAtLabel = computed(() => {
                             <li
                                 v-for="plan in props.plans"
                                 :key="plan.id"
-                                class="flex items-center gap-3 rounded-lg border border-[rgba(23,23,28,0.09)] px-4 py-3"
+                                class="flex items-center gap-3 rounded-md border px-4 py-3"
                             >
                                 <label
-                                    class="flex flex-1 items-center gap-2.5 text-sm text-[var(--color-ink)]"
+                                    class="flex flex-1 items-center gap-2.5 text-sm"
                                     :for="`plan-${plan.id}`"
                                 >
-                                    <input
+                                    <Checkbox
                                         :id="`plan-${plan.id}`"
-                                        type="checkbox"
-                                        class="back-checkbox"
-                                        :checked="isSelected(plan.id)"
-                                        @change="togglePlan(plan.id)"
+                                        :model-value="isSelected(plan.id)"
+                                        @update:model-value="
+                                            togglePlan(plan.id)
+                                        "
                                     />
-                                    <span>{{ plan.name }}</span>
-                                    <BackBadge v-if="!plan.active" class="ml-1">
+                                    <span class="font-medium">
+                                        {{ plan.name }}
+                                    </span>
+                                    <Badge
+                                        v-if="!plan.active"
+                                        variant="secondary"
+                                    >
                                         Inactif
-                                    </BackBadge>
+                                    </Badge>
                                 </label>
 
                                 <template v-if="planPosition(plan.id) !== null">
                                     <span
-                                        class="text-xs text-[var(--color-muted)] tabular-nums"
+                                        class="text-xs text-muted-foreground tabular-nums"
                                     >
                                         N°{{ planPosition(plan.id) }}
                                     </span>
                                     <div class="flex items-center gap-1">
-                                        <BackButton
-                                            variant="secondary"
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
                                             :disabled="
                                                 planPosition(plan.id) === 1
                                             "
                                             :aria-label="`Monter le plan ${plan.name}`"
                                             @click="movePlan(plan.id, -1)"
                                         >
-                                            ↑
-                                        </BackButton>
-                                        <BackButton
-                                            variant="secondary"
+                                            <ArrowUpIcon />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon-sm"
                                             :disabled="
                                                 planPosition(plan.id) ===
                                                 form.plan_ids.length
@@ -357,199 +380,198 @@ const publishedAtLabel = computed(() => {
                                             :aria-label="`Descendre le plan ${plan.name}`"
                                             @click="movePlan(plan.id, 1)"
                                         >
-                                            ↓
-                                        </BackButton>
+                                            <ArrowDownIcon />
+                                        </Button>
                                     </div>
                                 </template>
                             </li>
                         </ul>
 
-                        <p v-if="form.errors.plan_ids" class="back-error">
-                            {{ form.errors.plan_ids }}
-                        </p>
-                    </div>
-                </BackCard>
+                        <FieldError :errors="[form.errors.plan_ids]" />
+                    </CardContent>
 
-                <!-- FAQ -->
-                <BackCard
-                    title="FAQ"
-                    description="Questions fréquentes affichées en accordéon sous les plans, dans l'ordre de la liste."
-                >
-                    <div class="flex flex-col gap-4">
+                    <Separator />
+
+                    <!-- FAQ -->
+                    <CardContent class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                FAQ
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Questions fréquentes affichées en accordéon sous
+                                les plans, dans l'ordre de la liste.
+                            </p>
+                        </div>
+
                         <p
                             v-if="form.faq.length === 0"
-                            class="text-sm text-[var(--color-muted)]"
+                            class="text-sm text-muted-foreground"
                         >
                             Aucune question pour le moment.
                         </p>
 
-                        <div
+                        <Card
                             v-for="(_, faqIndex) in form.faq"
                             :key="faqIndex"
-                            class="rounded-lg border border-[rgba(23,23,28,0.09)] p-4"
+                            class="gap-4 rounded-md p-4"
                         >
                             <div class="flex items-center justify-between">
                                 <p
-                                    class="text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
+                                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
                                 >
                                     Question {{ faqIndex + 1 }}
                                 </p>
                                 <div class="flex items-center gap-1">
-                                    <BackButton
-                                        variant="secondary"
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         :disabled="faqIndex === 0"
                                         :aria-label="`Monter la question ${faqIndex + 1}`"
                                         @click="moveQuestion(faqIndex, -1)"
                                     >
-                                        ↑
-                                    </BackButton>
-                                    <BackButton
-                                        variant="secondary"
+                                        <ArrowUpIcon />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         :disabled="
                                             faqIndex === form.faq.length - 1
                                         "
                                         :aria-label="`Descendre la question ${faqIndex + 1}`"
                                         @click="moveQuestion(faqIndex, 1)"
                                     >
-                                        ↓
-                                    </BackButton>
-                                    <BackButton
-                                        variant="danger"
+                                        <ArrowDownIcon />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        class="text-destructive hover:text-destructive"
                                         :aria-label="`Supprimer la question ${faqIndex + 1}`"
                                         @click="removeQuestion(faqIndex)"
                                     >
-                                        Supprimer
-                                    </BackButton>
+                                        <Trash2Icon />
+                                    </Button>
                                 </div>
                             </div>
 
-                            <div class="mt-3 flex flex-col gap-4">
-                                <div class="flex flex-col gap-1.5">
-                                    <label
-                                        class="back-label"
+                            <div class="flex flex-col gap-4">
+                                <Field>
+                                    <FieldLabel
                                         :for="`faq-${faqIndex}-question`"
                                     >
                                         Question
-                                    </label>
-                                    <BackInput
+                                    </FieldLabel>
+                                    <Input
                                         :id="`faq-${faqIndex}-question`"
                                         :name="`faq[${faqIndex}][question]`"
                                         v-model="form.faq[faqIndex].question"
                                         required
                                     />
-                                    <p
-                                        v-if="
+                                    <FieldError
+                                        :errors="[
                                             form.errors[
                                                 `faq.${faqIndex}.question`
-                                            ]
-                                        "
-                                        class="back-error"
-                                    >
-                                        {{
-                                            form.errors[
-                                                `faq.${faqIndex}.question`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
+                                            ],
+                                        ]"
+                                    />
+                                </Field>
 
-                                <div class="flex flex-col gap-1.5">
-                                    <label
-                                        class="back-label"
-                                        :for="`faq-${faqIndex}-answer`"
-                                    >
+                                <Field>
+                                    <FieldLabel :for="`faq-${faqIndex}-answer`">
                                         Réponse
-                                    </label>
-                                    <textarea
+                                    </FieldLabel>
+                                    <Textarea
                                         :id="`faq-${faqIndex}-answer`"
                                         :name="`faq[${faqIndex}][answer]`"
                                         v-model="form.faq[faqIndex].answer"
-                                        rows="3"
-                                        class="back-input"
+                                        :rows="3"
                                         required
-                                    ></textarea>
-                                    <p
-                                        v-if="
+                                    />
+                                    <FieldError
+                                        :errors="[
                                             form.errors[
                                                 `faq.${faqIndex}.answer`
-                                            ]
-                                        "
-                                        class="back-error"
-                                    >
-                                        {{
-                                            form.errors[
-                                                `faq.${faqIndex}.answer`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
+                                            ],
+                                        ]"
+                                    />
+                                </Field>
                             </div>
-                        </div>
+                        </Card>
 
                         <div class="flex flex-col gap-2">
                             <div>
-                                <BackButton
-                                    variant="secondary"
-                                    @click="addQuestion"
-                                >
+                                <Button variant="outline" @click="addQuestion">
+                                    <PlusIcon />
                                     Ajouter une question
-                                </BackButton>
+                                </Button>
                             </div>
-                            <p v-if="form.errors.faq" class="back-error">
-                                {{ form.errors.faq }}
+                            <FieldError :errors="[form.errors.faq]" />
+                        </div>
+                    </CardContent>
+
+                    <Separator />
+
+                    <!-- Publication -->
+                    <CardContent class="flex flex-col gap-5">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Publication
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                État de diffusion de la table sur la page
+                                tarifs.
                             </p>
                         </div>
-                    </div>
-                </BackCard>
 
-                <!-- Publication -->
-                <BackCard
-                    title="Publication"
-                    description="État de diffusion de la table sur la page tarifs."
-                >
-                    <div
-                        class="flex flex-wrap items-center gap-4 border-t border-[rgba(23,23,28,0.09)] pt-5"
-                    >
-                        <template v-if="isEdit">
-                            <BackBadge
-                                :variant="isPublished ? 'success' : 'muted'"
-                            >
-                                {{ isPublished ? 'Publiée' : 'Brouillon' }}
-                            </BackBadge>
-                            <span
-                                v-if="isPublished"
-                                class="text-sm text-[var(--color-muted)]"
-                            >
-                                Depuis le {{ publishedAtLabel }}
-                            </span>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <template v-if="isEdit">
+                                <Badge
+                                    :variant="
+                                        isPublished ? 'success' : 'secondary'
+                                    "
+                                >
+                                    {{ isPublished ? 'Publiée' : 'Brouillon' }}
+                                </Badge>
+                                <span
+                                    v-if="isPublished"
+                                    class="text-sm text-muted-foreground"
+                                >
+                                    Depuis le {{ publishedAtLabel }}
+                                </span>
 
-                            <BackButton
-                                variant="secondary"
-                                :loading="publishing"
-                                @click="onTogglePublish"
-                            >
-                                {{ isPublished ? 'Dépublier' : 'Publier' }}
-                            </BackButton>
-                        </template>
-                        <BackStatus v-else tone="info">
-                            La table pourra être publiée après enregistrement.
-                        </BackStatus>
-                    </div>
-                </BackCard>
+                                <Button
+                                    variant="outline"
+                                    :disabled="publishing"
+                                    @click="onTogglePublish"
+                                >
+                                    <Spinner v-if="publishing" class="size-4" />
+                                    {{ isPublished ? 'Dépublier' : 'Publier' }}
+                                </Button>
+                            </template>
+                            <Alert v-else class="sm:max-w-sm">
+                                <AlertDescription>
+                                    La table pourra être publiée après
+                                    enregistrement.
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    </CardContent>
 
-                <!-- Actions -->
-                <div class="flex items-center justify-end gap-3">
-                    <a :href="index.url()" class="back-btn back-btn--secondary">
-                        Annuler
-                    </a>
-                    <BackButton type="submit" :loading="form.processing">
-                        {{
-                            isEdit
-                                ? 'Enregistrer les modifications'
-                                : 'Créer la table'
-                        }}
-                    </BackButton>
-                </div>
+                    <CardFooter class="justify-end gap-3 border-t pt-6">
+                        <Button variant="outline" as-child>
+                            <Link :href="index.url()">Annuler</Link>
+                        </Button>
+                        <Button type="submit" :disabled="form.processing">
+                            <Spinner v-if="form.processing" class="size-4" />
+                            {{
+                                isEdit
+                                    ? 'Enregistrer les modifications'
+                                    : 'Créer la table'
+                            }}
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </section>
     </BackLayout>

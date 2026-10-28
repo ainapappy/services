@@ -1,29 +1,87 @@
 <script setup lang="ts">
-// Liste des landing pages : tableau (titre, slug, statut, accueil, CTA)
-// avec actions editer / supprimer. Aucun import hors arbre back/.
-import { Head, router } from '@inertiajs/vue3';
+// Liste des landing pages : table shadcn (titre, slug, statut, accueil, CTA)
+// avec menu d'actions par ligne : edition et suppression confirmee.
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import type { BackLandingIndexPageProps } from '@/types';
-import { create, destroy, edit } from '@/routes/admin/landing';
+import { create, destroy, edit, publish } from '@/routes/admin/landing';
+import {
+    EllipsisVerticalIcon,
+    LayoutTemplateIcon,
+    PencilIcon,
+    PlusIcon,
+    Trash2Icon,
+} from '@lucide/vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 defineProps<BackLandingIndexPageProps>();
 
-/* Suppression : confirmation explicite puis retour a l'index actualise. */
+/* Suppression : confirmee par AlertDialog, puis retour a l'index actualise. */
 const deletingId = ref<number | null>(null);
 
-function onDestroy(id: number, title: string): void {
-    if (
-        !window.confirm(
-            `Supprimer la page « ${title} » ? Cette action est irréversible.`,
-        )
-    ) {
+/* Publication depuis la liste : un seul aller-retour a la fois, le
+   endpoint publish bascule publie <-> brouillon. */
+const publishingId = ref<number | null>(null);
+
+function onTogglePublish(id: number): void {
+    if (publishingId.value !== null) {
         return;
     }
 
+    publishingId.value = id;
+    router.patch(
+        publish({ landingPage: id }).url,
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                publishingId.value = null;
+            },
+        },
+    );
+}
+
+function onDestroy(id: number): void {
     if (deletingId.value !== null) {
         return;
     }
@@ -57,85 +115,83 @@ function formatPublishedAt(value: string | null): string {
         <Head title="Landing" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-wrap items-start justify-between gap-4">
-                <div class="flex flex-col gap-1">
-                    <h1
-                        class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
-                        Pages landing
-                    </h1>
-                    <p class="text-sm text-[var(--color-muted)]">
-                        Créez et publiez les pages vitrine : héros, boutons
-                        d'appel à l'action et référencement.
-                    </p>
-                </div>
-
-                <a
-                    :href="create.url()"
-                    class="back-btn back-btn--primary shrink-0"
-                >
-                    Nouvelle page
-                </a>
-            </header>
+            <BackPageHeader
+                title="Pages landing"
+                description="Créez et publiez les pages vitrine : héros, boutons d'appel à l'action et référencement."
+            >
+                <template #actions>
+                    <Button as-child>
+                        <Link :href="create.url()">
+                            <PlusIcon />
+                            Nouvelle page
+                        </Link>
+                    </Button>
+                </template>
+            </BackPageHeader>
 
             <!-- Etat vide -->
-            <BackEmptyState
-                v-if="landingPages.length === 0"
-                title="Aucune page"
-            >
-                Créez votre première landing page : elle sera rendue côté
-                vitrine dès sa publication.
-                <template #action>
-                    <a :href="create.url()" class="back-btn back-btn--primary">
-                        Nouvelle page
-                    </a>
-                </template>
-            </BackEmptyState>
+            <Empty v-if="landingPages.length === 0" class="rounded-xl border">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <LayoutTemplateIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucune page</EmptyTitle>
+                    <EmptyDescription>
+                        Créez votre première landing page : elle sera rendue
+                        côté vitrine dès sa publication.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button as-child>
+                        <Link :href="create.url()">
+                            <PlusIcon />
+                            Nouvelle page
+                        </Link>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Tableau -->
-            <div v-else class="back-card overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">
+            <Card v-else class="overflow-hidden py-0">
+                <Table>
+                    <TableCaption class="sr-only">
                         Landing pages : titre, statut de publication et actions
-                    </caption>
-                    <thead>
-                        <tr
-                            class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                        >
-                            <th scope="col" class="px-6 py-3">Page</th>
-                            <th scope="col" class="px-6 py-3">Statut</th>
-                            <th scope="col" class="px-6 py-3">CTA</th>
-                            <th scope="col" class="px-6 py-3">Publication</th>
-                            <th scope="col" class="px-6 py-3 text-right">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead class="h-12 px-4">Page</TableHead>
+                            <TableHead class="h-12 px-4">Statut</TableHead>
+                            <TableHead class="h-12 px-4">CTA</TableHead>
+                            <TableHead class="h-12 px-4">Publication</TableHead>
+                            <TableHead class="h-12 px-4 text-right">
                                 Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
                             v-for="landingPage in landingPages"
                             :key="landingPage.id"
-                            class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                         >
-                            <td class="px-6 py-4">
-                                <p
-                                    class="flex items-center gap-2 font-medium text-[var(--color-ink)]"
-                                >
+                            <TableCell class="px-4 py-3">
+                                <p class="flex items-center gap-2 font-medium">
                                     {{ landingPage.title }}
-                                    <BackBadge v-if="landingPage.isHome">
+                                    <Badge v-if="landingPage.isHome">
                                         Accueil
-                                    </BackBadge>
+                                    </Badge>
                                 </p>
-                                <p class="mt-0.5 text-[var(--color-muted)]">
+                                <p
+                                    class="mt-0.5 font-mono text-sm text-muted-foreground"
+                                >
                                     /{{ landingPage.slug }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
+                                <Badge
                                     :variant="
                                         landingPage.publishedAt !== null
                                             ? 'success'
-                                            : 'muted'
+                                            : 'secondary'
                                     "
                                 >
                                     {{
@@ -143,50 +199,124 @@ function formatPublishedAt(value: string | null): string {
                                             ? 'Publiée'
                                             : 'Brouillon'
                                     }}
-                                </BackBadge>
-                            </td>
-                            <td class="px-6 py-4">
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-3 tabular-nums">
                                 {{ landingPage.ctasCount }}
-                            </td>
-                            <td class="px-6 py-4">
-                                {{ formatPublishedAt(landingPage.publishedAt) }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div
-                                    class="flex items-center justify-end gap-3"
-                                >
-                                    <a
-                                        :href="
-                                            edit({
-                                                landingPage: landingPage.id,
-                                            }).url
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
+                                <div class="flex items-center gap-2.5">
+                                    <Switch
+                                        :model-value="
+                                            landingPage.publishedAt !== null
                                         "
-                                        class="back-link"
-                                    >
-                                        Éditer
-                                    </a>
-                                    <BackButton
-                                        variant="danger"
-                                        :loading="deletingId === landingPage.id"
-                                        :disabled="
-                                            deletingId !== null &&
-                                            deletingId !== landingPage.id
+                                        :disabled="publishingId !== null"
+                                        :aria-label="`Publier ou dépublier la page ${landingPage.title}`"
+                                        @update:model-value="
+                                            onTogglePublish(landingPage.id)
                                         "
-                                        @click="
-                                            onDestroy(
-                                                landingPage.id,
-                                                landingPage.title,
+                                    />
+                                    <Spinner
+                                        v-if="publishingId === landingPage.id"
+                                        class="size-4"
+                                    />
+                                    <span class="text-sm text-muted-foreground">
+                                        {{
+                                            formatPublishedAt(
+                                                landingPage.publishedAt,
                                             )
-                                        "
-                                    >
-                                        Supprimer
-                                    </BackButton>
+                                        }}
+                                    </span>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                            </TableCell>
+                            <TableCell class="px-4 py-3 text-right">
+                                <div class="flex justify-end">
+                                    <AlertDialog>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    :aria-label="`Actions pour ${landingPage.title}`"
+                                                >
+                                                    <EllipsisVerticalIcon />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                class="w-40"
+                                            >
+                                                <DropdownMenuItem as-child>
+                                                    <Link
+                                                        :href="
+                                                            edit({
+                                                                landingPage:
+                                                                    landingPage.id,
+                                                            }).url
+                                                        "
+                                                    >
+                                                        <PencilIcon />
+                                                        Éditer
+                                                    </Link>
+                                                </DropdownMenuItem>
+                                                <AlertDialogTrigger as-child>
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                    >
+                                                        <Trash2Icon />
+                                                        Supprimer
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Supprimer la page ?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Supprimer la page «
+                                                    {{ landingPage.title }} » ?
+                                                    Cette action est
+                                                    irréversible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Annuler
+                                                </AlertDialogCancel>
+                                                <AlertDialogAction as-child>
+                                                    <Button
+                                                        variant="destructive"
+                                                        :disabled="
+                                                            deletingId !== null
+                                                        "
+                                                        @click="
+                                                            onDestroy(
+                                                                landingPage.id,
+                                                            )
+                                                        "
+                                                    >
+                                                        <Spinner
+                                                            v-if="
+                                                                deletingId ===
+                                                                landingPage.id
+                                                            "
+                                                            class="size-4"
+                                                        />
+                                                        Supprimer
+                                                    </Button>
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </Card>
         </section>
     </BackLayout>
 </template>

@@ -1,18 +1,44 @@
 <script setup lang="ts">
 // Formulaire de creation / edition d'une landing page : contenu (titre,
-// slug, heros), repeateur de CTA, SEO, accueil et publication.
-// Aucun import hors arbre back/.
-import { Head, router, useForm } from '@inertiajs/vue3';
+// slug, heros), repeateur de CTA, SEO, accueil et publication. Carte unique
+// shadcn dont les sections sont separees par des separators.
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import type { BackLandingFormPageProps, Cta } from '@/types';
 import { index, publish, store, update } from '@/routes/admin/landing';
+import { ArrowDownIcon, ArrowUpIcon, PlusIcon, Trash2Icon } from '@lucide/vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackCard from '../../components/BackCard.vue';
-import BackField from '../../components/BackField.vue';
-import BackInput from '../../components/BackInput.vue';
-import BackStatus from '../../components/BackStatus.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 const props = defineProps<BackLandingFormPageProps>();
 
@@ -194,39 +220,27 @@ const publishedAtLabel = computed(() => {
         />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="index.url()" class="back-link">Pages landing</a>
-                    <span class="mx-1">/</span>
-                    <span>{{
-                        isEdit ? existing?.title : 'Nouvelle page'
-                    }}</span>
-                </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    {{
-                        isEdit
-                            ? 'Modifier la landing page'
-                            : 'Nouvelle landing page'
-                    }}
-                </h1>
-            </header>
+            <BackPageHeader
+                :title="
+                    isEdit
+                        ? 'Modifier la landing page'
+                        : 'Nouvelle landing page'
+                "
+            />
 
             <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
-                <!-- Contenu -->
-                <BackCard
-                    title="Contenu"
-                    description="Titre interne, adresse publique et bloc héros."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Titre"
-                            field-id="title"
-                            :error="form.errors.title"
-                            help="Nom interne de la page, visible uniquement en back-office."
-                        >
-                            <BackInput
+                <Card>
+                    <!-- Contenu -->
+                    <CardHeader>
+                        <CardTitle>Contenu</CardTitle>
+                        <CardDescription>
+                            Titre interne, adresse publique et bloc héros.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-5">
+                        <Field>
+                            <FieldLabel for="title">Titre</FieldLabel>
+                            <Input
                                 id="title"
                                 name="title"
                                 v-model="form.title"
@@ -234,353 +248,377 @@ const publishedAtLabel = computed(() => {
                                 placeholder="Ex. Passerelle de services"
                                 @input="onTitleInput"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Nom interne de la page, visible uniquement en
+                                back-office.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.title]" />
+                        </Field>
 
-                        <BackField
-                            label="Slug"
-                            field-id="slug"
-                            :error="form.errors.slug"
-                            help="Généré depuis le titre, modifiable. L'adresse publique sera /votre-slug."
-                        >
-                            <BackInput
+                        <Field>
+                            <FieldLabel for="slug">Slug</FieldLabel>
+                            <Input
                                 id="slug"
                                 name="slug"
                                 v-model="form.slug"
                                 required
+                                class="font-mono"
                                 placeholder="passerelle-de-services"
                                 @input="onSlugInput"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Généré depuis le titre, modifiable. L'adresse
+                                publique sera /votre-slug.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.slug]" />
+                        </Field>
 
-                        <BackField
-                            label="Titre du héros"
-                            field-id="hero_title"
-                            :error="form.errors.hero_title"
-                            help="Grand titre affiché en haut de la page vitrine."
-                        >
-                            <BackInput
+                        <Field>
+                            <FieldLabel for="hero_title">
+                                Titre du héros
+                            </FieldLabel>
+                            <Input
                                 id="hero_title"
                                 name="hero_title"
                                 v-model="form.hero_title"
                                 required
                                 placeholder="Une passerelle. Tous vos services."
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Grand titre affiché en haut de la page vitrine.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.hero_title]" />
+                        </Field>
 
-                        <BackField
-                            label="Sous-titre du héros"
-                            field-id="hero_subtitle"
-                            :error="form.errors.hero_subtitle"
-                            help="Phrase d'accroche affichée sous le titre."
-                        >
-                            <textarea
+                        <Field>
+                            <FieldLabel for="hero_subtitle">
+                                Sous-titre du héros
+                            </FieldLabel>
+                            <Textarea
                                 id="hero_subtitle"
                                 name="hero_subtitle"
                                 v-model="form.hero_subtitle"
                                 required
-                                rows="3"
-                                class="back-input"
+                                :rows="3"
                                 placeholder="Décrivez votre plateforme en une ou deux phrases."
-                            ></textarea>
-                        </BackField>
-                    </div>
-                </BackCard>
+                            />
+                            <FieldDescription>
+                                Phrase d'accroche affichée sous le titre.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.hero_subtitle]" />
+                        </Field>
+                    </CardContent>
 
-                <!-- CTA -->
-                <BackCard
-                    title="Boutons d'appel à l'action"
-                    description="Boutons affichés sous le héros, dans l'ordre de la liste."
-                >
-                    <div class="flex flex-col gap-4">
+                    <Separator />
+
+                    <!-- CTA -->
+                    <CardContent class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Boutons d'appel à l'action
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Boutons affichés sous le héros, dans l'ordre de
+                                la liste.
+                            </p>
+                        </div>
+
                         <p
                             v-if="form.ctas.length === 0"
-                            class="text-sm text-[var(--color-muted)]"
+                            class="text-sm text-muted-foreground"
                         >
                             Aucun bouton pour le moment.
                         </p>
 
-                        <div
+                        <Card
                             v-for="(_, ctaIndex) in form.ctas"
                             :key="ctaIndex"
-                            class="rounded-lg border border-[rgba(23,23,28,0.09)] p-4"
+                            class="gap-4 rounded-md p-4"
                         >
                             <div class="flex items-center justify-between">
                                 <p
-                                    class="text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
+                                    class="text-xs font-medium tracking-wide text-muted-foreground uppercase"
                                 >
                                     Bouton {{ ctaIndex + 1 }}
                                 </p>
                                 <div class="flex items-center gap-1">
-                                    <BackButton
-                                        variant="secondary"
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         :disabled="ctaIndex === 0"
                                         :aria-label="`Monter le bouton ${ctaIndex + 1}`"
                                         @click="moveCta(ctaIndex, -1)"
                                     >
-                                        ↑
-                                    </BackButton>
-                                    <BackButton
-                                        variant="secondary"
+                                        <ArrowUpIcon />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
                                         :disabled="
                                             ctaIndex === form.ctas.length - 1
                                         "
                                         :aria-label="`Descendre le bouton ${ctaIndex + 1}`"
                                         @click="moveCta(ctaIndex, 1)"
                                     >
-                                        ↓
-                                    </BackButton>
-                                    <BackButton
-                                        variant="danger"
+                                        <ArrowDownIcon />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        class="text-destructive hover:text-destructive"
                                         :aria-label="`Supprimer le bouton ${ctaIndex + 1}`"
                                         @click="removeCta(ctaIndex)"
                                     >
-                                        Supprimer
-                                    </BackButton>
+                                        <Trash2Icon />
+                                    </Button>
                                 </div>
                             </div>
 
-                            <div
-                                class="mt-3 grid gap-4 sm:grid-cols-[1fr_1fr_auto]"
-                            >
-                                <div class="flex flex-col gap-1.5">
-                                    <label
-                                        class="back-label"
-                                        :for="`cta-${ctaIndex}-label`"
-                                    >
+                            <div class="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
+                                <Field>
+                                    <FieldLabel :for="`cta-${ctaIndex}-label`">
                                         Libellé
-                                    </label>
-                                    <BackInput
+                                    </FieldLabel>
+                                    <Input
                                         :id="`cta-${ctaIndex}-label`"
                                         :name="`ctas[${ctaIndex}][label]`"
                                         v-model="form.ctas[ctaIndex].label"
                                         required
                                     />
-                                    <p
-                                        v-if="
+                                    <FieldError
+                                        :errors="[
                                             form.errors[
                                                 `ctas.${ctaIndex}.label`
-                                            ]
-                                        "
-                                        class="back-error"
-                                    >
-                                        {{
-                                            form.errors[
-                                                `ctas.${ctaIndex}.label`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
+                                            ],
+                                        ]"
+                                    />
+                                </Field>
 
-                                <div class="flex flex-col gap-1.5">
-                                    <label
-                                        class="back-label"
-                                        :for="`cta-${ctaIndex}-url`"
-                                    >
+                                <Field>
+                                    <FieldLabel :for="`cta-${ctaIndex}-url`">
                                         Lien
-                                    </label>
-                                    <BackInput
+                                    </FieldLabel>
+                                    <Input
                                         :id="`cta-${ctaIndex}-url`"
                                         :name="`ctas[${ctaIndex}][url]`"
                                         v-model="form.ctas[ctaIndex].url"
                                         required
                                         placeholder="Lien absolu ou /chemin interne"
                                     />
-                                    <p
-                                        v-if="
-                                            form.errors[`ctas.${ctaIndex}.url`]
-                                        "
-                                        class="back-error"
-                                    >
-                                        {{
-                                            form.errors[`ctas.${ctaIndex}.url`]
-                                        }}
-                                    </p>
-                                </div>
+                                    <FieldError
+                                        :errors="[
+                                            form.errors[`ctas.${ctaIndex}.url`],
+                                        ]"
+                                    />
+                                </Field>
 
-                                <div class="flex flex-col gap-1.5">
-                                    <label
-                                        class="back-label"
-                                        :for="`cta-${ctaIndex}-style`"
-                                    >
+                                <Field>
+                                    <FieldLabel :for="`cta-${ctaIndex}-style`">
                                         Style
-                                    </label>
-                                    <select
-                                        :id="`cta-${ctaIndex}-style`"
-                                        :name="`ctas[${ctaIndex}][style]`"
-                                        v-model="form.ctas[ctaIndex].style"
-                                        class="back-input"
-                                    >
-                                        <option value="primary">
-                                            Principal
-                                        </option>
-                                        <option value="secondary">
-                                            Secondaire
-                                        </option>
-                                    </select>
-                                    <p
-                                        v-if="
+                                    </FieldLabel>
+                                    <Select v-model="form.ctas[ctaIndex].style">
+                                        <SelectTrigger
+                                            :id="`cta-${ctaIndex}-style`"
+                                            class="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="primary">
+                                                Principal
+                                            </SelectItem>
+                                            <SelectItem value="secondary">
+                                                Secondaire
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FieldError
+                                        :errors="[
                                             form.errors[
                                                 `ctas.${ctaIndex}.style`
-                                            ]
-                                        "
-                                        class="back-error"
-                                    >
-                                        {{
-                                            form.errors[
-                                                `ctas.${ctaIndex}.style`
-                                            ]
-                                        }}
-                                    </p>
-                                </div>
+                                            ],
+                                        ]"
+                                    />
+                                </Field>
                             </div>
-                        </div>
+                        </Card>
 
                         <div class="flex flex-col gap-2">
                             <div>
-                                <BackButton
-                                    variant="secondary"
+                                <Button
+                                    variant="outline"
                                     :disabled="hasMaxCtas"
                                     @click="addCta"
                                 >
+                                    <PlusIcon />
                                     Ajouter un bouton
-                                </BackButton>
+                                </Button>
                             </div>
-                            <p v-if="hasMaxCtas" class="back-help">
+                            <p
+                                v-if="hasMaxCtas"
+                                class="text-sm text-muted-foreground"
+                            >
                                 Maximum {{ MAX_CTAS }} boutons atteint.
                             </p>
-                            <p v-if="form.errors.ctas" class="back-error">
-                                {{ form.errors.ctas }}
+                            <FieldError :errors="[form.errors.ctas]" />
+                        </div>
+                    </CardContent>
+
+                    <Separator />
+
+                    <!-- SEO -->
+                    <CardContent class="flex flex-col gap-5">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Référencement
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Titre et description utilisés par les moteurs de
+                                recherche.
                             </p>
                         </div>
-                    </div>
-                </BackCard>
 
-                <!-- SEO -->
-                <BackCard
-                    title="Référencement"
-                    description="Titre et description utilisés par les moteurs de recherche."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Titre SEO"
-                            field-id="seo-title"
-                            :error="form.errors['seo.title']"
-                            :help="`${form.seo.title.length}/60 caractères recommandés`"
-                        >
-                            <BackInput
+                        <Field>
+                            <FieldLabel for="seo-title">Titre SEO</FieldLabel>
+                            <Input
                                 id="seo-title"
                                 name="seo[title]"
                                 v-model="form.seo.title"
                                 :maxlength="120"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                {{ form.seo.title.length }}/60 caractères
+                                recommandés
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors['seo.title']]" />
+                        </Field>
 
-                        <BackField
-                            label="Description SEO"
-                            field-id="seo-description"
-                            :error="form.errors['seo.description']"
-                            :help="`${form.seo.description.length}/160 caractères recommandés`"
-                        >
-                            <textarea
+                        <Field>
+                            <FieldLabel for="seo-description">
+                                Description SEO
+                            </FieldLabel>
+                            <Textarea
                                 id="seo-description"
                                 name="seo[description]"
                                 v-model="form.seo.description"
-                                rows="3"
+                                :rows="3"
                                 :maxlength="320"
-                                class="back-input"
-                            ></textarea>
-                        </BackField>
-                    </div>
-                </BackCard>
+                            />
+                            <FieldDescription>
+                                {{ form.seo.description.length }}/160 caractères
+                                recommandés
+                            </FieldDescription>
+                            <FieldError
+                                :errors="[form.errors['seo.description']]"
+                            />
+                        </Field>
+                    </CardContent>
 
-                <!-- Accueil + publication -->
-                <BackCard
-                    title="Accueil et publication"
-                    description="Emplacement de la page dans le site et état de diffusion."
-                >
-                    <div class="flex flex-col gap-5">
+                    <Separator />
+
+                    <!-- Accueil + publication -->
+                    <CardContent class="flex flex-col gap-5">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Accueil et publication
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Emplacement de la page dans le site et état de
+                                diffusion.
+                            </p>
+                        </div>
+
                         <div class="flex flex-col gap-3">
-                            <label
-                                class="flex items-center gap-2.5 text-sm text-[var(--color-ink)]"
-                            >
-                                <input
+                            <Field orientation="horizontal">
+                                <Switch
                                     id="is_home"
-                                    name="is_home"
-                                    type="checkbox"
-                                    v-model="form.is_home"
-                                    class="back-checkbox"
+                                    v-model:checked="form.is_home"
                                 />
-                                <span>Définir comme page d'accueil</span>
-                            </label>
+                                <FieldContent>
+                                    <FieldLabel for="is_home">
+                                        Définir comme page d'accueil
+                                    </FieldLabel>
+                                </FieldContent>
+                            </Field>
 
-                            <BackStatus
+                            <Alert
                                 v-if="form.is_home && !isEdit"
-                                tone="warning"
+                                variant="warning"
                             >
-                                Cette page deviendra l'accueil du site : elle
-                                sera servie sur la racine « / » à la place de la
-                                page actuellement définie.
-                            </BackStatus>
-                            <BackStatus v-else-if="form.is_home" tone="warning">
-                                Cette page deviendra l'accueil du site : la page
-                                actuellement définie perdra ce statut.
-                            </BackStatus>
+                                <AlertDescription>
+                                    Cette page deviendra l'accueil du site :
+                                    elle sera servie sur la racine « / » à la
+                                    place de la page actuellement définie.
+                                </AlertDescription>
+                            </Alert>
+                            <Alert v-else-if="form.is_home" variant="warning">
+                                <AlertDescription>
+                                    Cette page deviendra l'accueil du site : la
+                                    page actuellement définie perdra ce statut.
+                                </AlertDescription>
+                            </Alert>
                         </div>
 
                         <div
-                            class="flex flex-wrap items-center gap-4 border-t border-[rgba(23,23,28,0.09)] pt-5"
+                            class="flex flex-wrap items-center gap-4 border-t pt-5"
                         >
                             <template v-if="isEdit">
-                                <BackBadge
-                                    :variant="isPublished ? 'success' : 'muted'"
+                                <Badge
+                                    :variant="
+                                        isPublished ? 'success' : 'secondary'
+                                    "
                                 >
                                     {{ isPublished ? 'Publiée' : 'Brouillon' }}
-                                </BackBadge>
+                                </Badge>
                                 <span
                                     v-if="isPublished"
-                                    class="text-sm text-[var(--color-muted)]"
+                                    class="text-sm text-muted-foreground"
                                 >
                                     Depuis le {{ publishedAtLabel }}
                                 </span>
 
-                                <BackButton
+                                <Button
                                     v-if="isPublished"
-                                    variant="secondary"
-                                    :loading="publishing"
+                                    variant="outline"
+                                    :disabled="publishing"
                                     @click="onTogglePublish"
                                 >
+                                    <Spinner v-if="publishing" class="size-4" />
                                     Dépublier
-                                </BackButton>
-                                <BackButton
+                                </Button>
+                                <Button
                                     v-else
-                                    variant="secondary"
-                                    :loading="publishing"
+                                    variant="outline"
+                                    :disabled="publishing"
                                     @click="onTogglePublish"
                                 >
+                                    <Spinner v-if="publishing" class="size-4" />
                                     Publier
-                                </BackButton>
+                                </Button>
                             </template>
-                            <BackStatus v-else tone="info">
-                                La page pourra être publiée après
-                                enregistrement.
-                            </BackStatus>
+                            <Alert v-else class="sm:max-w-sm">
+                                <AlertDescription>
+                                    La page pourra être publiée après
+                                    enregistrement.
+                                </AlertDescription>
+                            </Alert>
                         </div>
-                    </div>
-                </BackCard>
+                    </CardContent>
 
-                <!-- Actions -->
-                <div class="flex items-center justify-end gap-3">
-                    <a :href="index.url()" class="back-btn back-btn--secondary">
-                        Annuler
-                    </a>
-                    <BackButton type="submit" :loading="form.processing">
-                        {{
-                            isEdit
-                                ? 'Enregistrer les modifications'
-                                : 'Créer la page'
-                        }}
-                    </BackButton>
-                </div>
+                    <CardFooter class="justify-end gap-3 border-t pt-6">
+                        <Button variant="outline" as-child>
+                            <Link :href="index.url()">Annuler</Link>
+                        </Button>
+                        <Button type="submit" :disabled="form.processing">
+                            <Spinner v-if="form.processing" class="size-4" />
+                            {{
+                                isEdit
+                                    ? 'Enregistrer les modifications'
+                                    : 'Créer la page'
+                            }}
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </section>
     </BackLayout>
