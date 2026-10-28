@@ -22,11 +22,11 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                background-color: oklch(0.967 0.003 106);
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                background-color: oklch(0.141 0.005 285.823);
             }
         </style>
 
@@ -36,7 +36,14 @@
 
         @fonts
 
-        @vite(['resources/css/app.css', 'resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
+        @php
+            $component = $page['component'];
+            $pageEntry = preg_match('#^(front|back)/#', $component) === 1
+                ? 'resources/js/' . preg_replace('#^([^/]+)/#', '$1/pages/', $component, 1) . '.vue'
+                : "resources/js/pages/{$component}.vue";
+        @endphp
+
+        @vite(['resources/css/app.css', 'resources/js/app.ts', $pageEntry])
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>

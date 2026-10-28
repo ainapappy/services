@@ -2,9 +2,13 @@
 
 namespace App\Providers;
 
+use App\Core\Modules\ModuleRegistry;
+use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -15,7 +19,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(ModuleRegistry::class);
     }
 
     /**
@@ -24,6 +28,22 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureGates();
+        $this->configureTestHardening();
+    }
+
+    /**
+     * Define the back-office authorization gates.
+     */
+    private function configureGates(): void
+    {
+        // Any verified user may enter the back-office; administrators manage
+        // the platform, editors contribute to content from phases 03/04.
+        Gate::define('access-back-office', fn (User $user): bool => $user->hasVerifiedEmail());
+
+        Gate::define('manage-modules', fn (User $user): bool => $user->isAdmin());
+
+        Gate::define('manage-settings', fn (User $user): bool => $user->isAdmin());
     }
 
     /**
@@ -46,5 +66,14 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Test-only hardening: lazy loading throws instead of silently
+     * querying — the suite then fails on every N+1 it reveals.
+     */
+    private function configureTestHardening(): void
+    {
+        Model::preventLazyLoading(app()->environment('testing'));
     }
 }

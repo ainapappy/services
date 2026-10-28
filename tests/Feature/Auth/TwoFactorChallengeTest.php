@@ -27,6 +27,8 @@ test('two factor challenge can be rendered', function () {
         'password' => 'password',
     ]);
 
+    $this->withoutVite();
+
     $this->get(route('two-factor.login'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page

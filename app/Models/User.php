@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\Auth\ResetPassword;
+use App\Notifications\Auth\VerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,6 +20,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string $role
  * @property Carbon|null $email_verified_at
  * @property string $password
  * @property string|null $two_factor_secret
@@ -27,12 +30,49 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * The role of a back-office administrator.
+     */
+    final public const ROLE_ADMIN = 'admin';
+
+    /**
+     * The role of a content editor.
+     */
+    final public const ROLE_EDITOR = 'editor';
+
+    /**
+     * Determine whether the user is an administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    /**
+     * Send the email verification notification on the project mail
+     * skeleton.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
+    }
+
+    /**
+     * Send the password reset notification on the project mail skeleton.
+     *
+     * @param  string  $token
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new ResetPassword($token));
+    }
 
     /**
      * Get the attributes that should be cast.

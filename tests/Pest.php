@@ -1,5 +1,7 @@
 <?php
 
+use App\Domain\Gateway\Models\ApiKey;
+use App\Domain\Webhooks\Models\WebhookEndpoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,6 +35,33 @@ expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
 
+expect()->extend('toBeEmojiFree', function () {
+    preg_match(
+        '/[\x{1F000}-\x{1FFFF}\x{2B00}-\x{2BFF}\x{2600}-\x{27BF}\x{FE0F}\x{2049}\x{203C}\x{2190}-\x{21FF}]/u',
+        (string) $this->value,
+        $matches,
+    );
+
+    expect($matches)->toBeEmpty();
+
+    return $this;
+});
+
+/*
+|--------------------------------------------------------------------------
+| Global setup
+|--------------------------------------------------------------------------
+|
+| Inertia page renders (the 404 pages included) resolve their page
+| entry against the Vite manifest: the suite must stay independent of
+| any frontend build, so Vite is faked for every test.
+|
+*/
+
+beforeEach(function () {
+    $this->withoutVite();
+});
+
 /*
 |--------------------------------------------------------------------------
 | Functions
@@ -47,4 +76,56 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| Gateway helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Generate a fresh plaintext API key secret ("sk_" + 40 hex chars).
+ */
+function gatewaySecret(): string
+{
+    return ApiKey::generateSecret();
+}
+
+/**
+ * Create an API key whose plaintext secret is known to the test.
+ */
+function gatewayKey(string $secret, array $attributes = []): ApiKey
+{
+    return ApiKey::factory()->forSecret($secret)->create($attributes);
+}
+
+/**
+ * The headers sending a secret through the "Authorization: Bearer" scheme.
+ */
+function withBearer(string $secret): array
+{
+    return ['Authorization' => 'Bearer '.$secret];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Generate a fresh plaintext webhook secret (64 hex chars).
+ */
+function webhookSecret(): string
+{
+    return WebhookEndpoint::generateSecret();
+}
+
+/**
+ * Create a webhook endpoint whose plaintext secret is known to the test.
+ */
+function webhookEndpoint(string $secret, array $attributes = []): WebhookEndpoint
+{
+    return WebhookEndpoint::factory()->create(array_merge($attributes, ['secret' => $secret]));
 }

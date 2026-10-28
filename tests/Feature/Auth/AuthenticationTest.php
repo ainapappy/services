@@ -2,12 +2,25 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
 test('login screen can be rendered', function () {
+    $this->withoutVite();
+
     $response = $this->get(route('login'));
 
-    $response->assertOk();
+    $response->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('back/Login', false)
+        ->where('canResetPassword', true));
+});
+
+test('authenticated users hitting the login screen land on the dashboard', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('login'))
+        ->assertRedirect(route('admin.dashboard'));
 });
 
 test('users can authenticate using the login screen', function () {
@@ -19,7 +32,7 @@ test('users can authenticate using the login screen', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('admin.dashboard', absolute: false));
 });
 
 test('users with two factor enabled are redirected to two factor challenge', function () {
@@ -74,4 +87,42 @@ test('users are rate limited', function () {
     ]);
 
     $response->assertTooManyRequests();
+});
+
+test('repeated failed attempts trigger the login throttle', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 5) as $attempt) {
+        $this->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+    }
+
+    // Even valid credentials are rejected once the throttle kicks in.
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertTooManyRequests();
+
+    $this->assertGuest();
+});
+
+test('a successful login remains possible below the throttle threshold', function () {
+    $user = User::factory()->create();
+
+    foreach (range(1, 4) as $attempt) {
+        $this->post(route('login.store'), [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+    }
+
+    // The fifth attempt within the minute is still allowed.
+    $this->post(route('login.store'), [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertRedirect(route('admin.dashboard', absolute: false));
+
+    $this->assertAuthenticated();
 });

@@ -1,0 +1,596 @@
+/* Charte FRONT-OFFICE (vitrine, suit le theme global clair/sombre) - EFFETS
+   UNIQUEMENT. Les tokens (Tailwind + shadcn, variant .dark) vivent dans
+   app.css ; ce fichier ne porte plus que les effets propres a la vitrine :
+   halos -z-10, console temps reel, marquee, bordure rotative du plan
+   populaire, revelation au scroll (directive v-reveal), swap des prix, 404
+   et reduced-motion. Il est importe par FrontLayout.vue, et par lui seul.
+   Les regles restent hors layer pour ne pas etre ecrasees par les
+   utilitaires Tailwind. Les couleurs accordees au theme sombre ont une
+   variante claire AA en fin de fichier. */
+
+/* Le fond de page est porte par html (debordements et overscroll) : il suit
+   le theme global via --background, pilote par la classe .dark de <html>
+   (moteur commun au back-office : useAppearance + anti-flash du blade). */
+html {
+    background-color: var(--background);
+    scroll-behavior: smooth;
+}
+
+/* Texte accent des chips de code des rows : indigo 300 en sombre (AA large
+   sur les surfaces de la console, la ou --primary / --ring plafonnent sous
+   4.5:1 en petit corps) ; la variante claire AA est dans le bloc dedie en
+   fin de fichier. */
+:root {
+    --front-accent-text: #a5b4fc;
+}
+
+/* --------------------------------------------------------------------------
+   Halos animes en -z-10 + grille radiale du heros
+   (la coquille est isolee : les halos -z-10 se peignent au-dessus de son
+   fond, sous le contenu)
+   -------------------------------------------------------------------------- */
+
+.front-glow {
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    position: absolute;
+    z-index: -10;
+}
+
+.front-glow--a {
+    animation: front-drift 17s ease-in-out infinite alternate;
+    background: rgba(99, 102, 241, 0.28);
+    height: 520px;
+    left: -120px;
+    top: -140px;
+    width: 520px;
+}
+
+.front-glow--b {
+    animation: front-drift 21s ease-in-out infinite alternate-reverse;
+    background: rgba(139, 92, 246, 0.22);
+    height: 460px;
+    right: -140px;
+    top: 60px;
+    width: 460px;
+}
+
+/* Halo central du heros de la page tarifs. */
+.front-glow--top {
+    animation: front-drift 18s ease-in-out infinite alternate;
+    background: rgba(99, 102, 241, 0.26);
+    height: 520px;
+    left: 50%;
+    margin-left: -260px;
+    top: -220px;
+    width: 520px;
+}
+
+@keyframes front-drift {
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+
+    to {
+        transform: translate(48px, -34px) scale(1.14);
+    }
+}
+
+/* Grille masquee en radiale, portee par la section heros. */
+.front-bg-grid {
+    background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(
+        ellipse 90% 70% at 50% 0%,
+        #000 30%,
+        transparent 78%
+    );
+    mask-image: radial-gradient(
+        ellipse 90% 70% at 50% 0%,
+        #000 30%,
+        transparent 78%
+    );
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: -10;
+}
+
+/* --------------------------------------------------------------------------
+   Badge « eyebrow » : habillage doux du Badge outline shadcn, plus le point
+   pulsant du prototype
+   -------------------------------------------------------------------------- */
+
+.front-eyebrow {
+    background: var(--accent);
+    border-color: rgba(99, 102, 241, 0.35);
+    font-size: 0.82rem;
+    font-weight: 600;
+    gap: 0.55rem;
+    padding: 0.4rem 1rem;
+}
+
+.front-eyebrow .dot {
+    animation: front-pulse 2s ease-in-out infinite;
+    background: var(--primary);
+    border-radius: 50%;
+    height: 7px;
+    width: 7px;
+}
+
+@keyframes front-pulse {
+    50% {
+        opacity: 0.35;
+        transform: scale(0.8);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Console flottante « temps reel »
+   -------------------------------------------------------------------------- */
+
+/* Wrapper du heros : flottement lent + ancre des chips (tilt 3D pose par la
+   page sur .front-console lui-meme). */
+.front-hero-visual {
+    animation: front-floaty 7s ease-in-out infinite;
+    position: relative;
+}
+
+@keyframes front-floaty {
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+.front-console {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.6);
+    padding: 1rem 1.1rem 1.15rem;
+    transition: transform 0.35s ease;
+    will-change: transform;
+}
+
+.front-console-head {
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.45rem;
+    padding-bottom: 0.8rem;
+}
+
+.cdot {
+    border-radius: 50%;
+    height: 10px;
+    width: 10px;
+}
+
+.cdot.r {
+    background: #f87171;
+}
+
+.cdot.y {
+    background: #fbbf24;
+}
+
+.cdot.g {
+    background: #34d399;
+}
+
+.ctitle {
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+/* Vert emeraude eclairci pour rester AA sur fond sombre. */
+.badge-live {
+    align-items: center;
+    background: rgba(16, 185, 129, 0.14);
+    border-radius: 999px;
+    color: #34d399;
+    display: inline-flex;
+    font-size: 0.68rem;
+    font-weight: 700;
+    gap: 0.35rem;
+    letter-spacing: 0.08em;
+    margin-left: auto;
+    padding: 0.22rem 0.6rem;
+}
+
+.badge-live .pulse {
+    animation: front-pulse 1.6s ease-in-out infinite;
+    background: #34d399;
+    border-radius: 50%;
+    height: 6px;
+    width: 6px;
+}
+
+.front-console-metric {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+    padding: 1rem 0 0.6rem;
+}
+
+.rps-label {
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.rps {
+    color: var(--foreground);
+    font-size: 2rem;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+}
+
+.front-bars {
+    align-items: flex-end;
+    display: flex;
+    gap: 4px;
+    height: 62px;
+    margin-bottom: 1rem;
+}
+
+.front-bars span {
+    animation: front-bar 2.6s ease-in-out infinite;
+    background: linear-gradient(180deg, #8b5cf6, #6366f1);
+    border-radius: 3px;
+    flex: 1;
+    opacity: 0.9;
+    transform-origin: bottom;
+}
+
+@keyframes front-bar {
+    0%,
+    100% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(0.5);
+    }
+}
+
+.front-console-rows {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.front-console-rows .row {
+    align-items: center;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex;
+    font-size: 0.78rem;
+    gap: 0.7rem;
+    padding: 0.5rem 0.7rem;
+}
+
+.front-console-rows code {
+    background: var(--accent);
+    border-radius: 6px;
+    color: var(--front-accent-text);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.1rem 0.4rem;
+}
+
+.front-console-rows .row span {
+    color: var(--muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.front-console-rows em {
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-style: normal;
+    font-weight: 700;
+    margin-left: auto;
+    padding: 0.1rem 0.45rem;
+}
+
+/* Statuts eclaircis (emeraude / ambre) pour rester lisibles en sombre. */
+.front-console-rows .ok {
+    background: rgba(16, 185, 129, 0.14);
+    color: #34d399;
+}
+
+.front-console-rows .warn {
+    background: rgba(245, 158, 11, 0.14);
+    color: #fbbf24;
+}
+
+/* Chips flottantes autour de la console. */
+.front-chip {
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.55);
+    display: flex;
+    font-size: 0.78rem;
+    font-weight: 600;
+    gap: 0.5rem;
+    padding: 0.55rem 0.85rem;
+    position: absolute;
+}
+
+.front-chip::before {
+    animation: front-pulse 2s ease-in-out infinite;
+    background: #34d399;
+    border-radius: 50%;
+    content: '';
+    height: 8px;
+    width: 8px;
+}
+
+.front-chip--a {
+    animation: front-floaty 6s ease-in-out infinite reverse;
+    right: 6%;
+    top: -18px;
+}
+
+.front-chip--b {
+    animation: front-floaty 8s ease-in-out infinite;
+    bottom: -16px;
+    left: 2%;
+}
+
+/* --------------------------------------------------------------------------
+   Marquee d'integrations en boucle
+   -------------------------------------------------------------------------- */
+
+.front-marquee {
+    -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent,
+        #000 14%,
+        #000 86%,
+        transparent
+    );
+    mask-image: linear-gradient(
+        90deg,
+        transparent,
+        #000 14%,
+        #000 86%,
+        transparent
+    );
+    overflow: hidden;
+    padding: 2.5rem 0 1rem;
+}
+
+.front-marquee p {
+    color: var(--muted-foreground);
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    margin-bottom: 1.4rem;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.front-marquee-track {
+    animation: front-slide 28s linear infinite;
+    display: flex;
+    gap: 2.6rem;
+    width: max-content;
+}
+
+@keyframes front-slide {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.front-pill {
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted-foreground);
+    display: inline-flex;
+    font-size: 0.95rem;
+    font-weight: 600;
+    gap: 0.55rem;
+    padding: 0.6rem 1.25rem;
+    white-space: nowrap;
+}
+
+.front-pill svg {
+    color: var(--primary);
+}
+
+/* --------------------------------------------------------------------------
+   Revelation au scroll (directive v-reveal - ne pas renommer)
+   -------------------------------------------------------------------------- */
+
+.front-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition:
+        opacity 0.7s ease,
+        transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--front-reveal-delay, 0s);
+}
+
+.front-reveal--in {
+    opacity: 1;
+    transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   Plan « populaire » : bordure degradee rotative + tag flottant
+   (@property enregistre --ang comme angle, sinon l'animation de la variable
+   ne s'interpole pas). Rayon calque sur le Card shadcn (rounded-xl). */
+@property --ang {
+    initial-value: 0deg;
+    inherits: false;
+    syntax: '<angle>';
+}
+
+@keyframes front-ang-spin {
+    to {
+        --ang: 360deg;
+    }
+}
+
+.front-plan--popular {
+    box-shadow: 0 24px 60px -28px rgba(99, 102, 241, 0.45);
+}
+
+@media (min-width: 921px) {
+    .front-plan--popular {
+        transform: scale(1.035);
+    }
+}
+
+.front-plan--popular::before {
+    animation: front-ang-spin 6s linear infinite;
+    background: conic-gradient(
+        from var(--ang, 0deg),
+        #6366f1,
+        #8b5cf6,
+        #22d3ee,
+        #6366f1
+    );
+    border-radius: calc(0.75rem + 1.5px);
+    content: '';
+    inset: -1.5px;
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 1.5px;
+    pointer-events: none;
+    position: absolute;
+}
+
+/* Tag flottant pose sur un Badge shadcn : la bordure arrondie pleine reste
+   portee par le composant, ici le degrade a extremes assombries garde le
+   blanc a plus de 4.5:1. */
+.front-tag-popular {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    box-shadow: 0 12px 40px -12px rgba(99, 102, 241, 0.45);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    left: 50%;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.9rem;
+    position: absolute;
+    text-transform: uppercase;
+    top: -13px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* --------------------------------------------------------------------------
+   Bascule mensuel / annuel : le montant s'eteint puis reapparait (180 ms,
+   pilote par la page). La transition courante est posee en Tailwind.
+   -------------------------------------------------------------------------- */
+
+.front-price-amount--swap {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+}
+
+.front-bill-note--swap {
+    opacity: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Page 404 (front/pages/NotFound.vue)
+   -------------------------------------------------------------------------- */
+
+/* Heros centre de l'erreur : memes halos -z-10, rythme plus genereux. */
+.front-hero--error {
+    padding: 6rem 0 7rem;
+    text-align: center;
+}
+
+/* Grand 404 : chiffres tabulaires, le degrade passe en Tailwind. */
+.front-error-code {
+    font-size: clamp(5.5rem, 14vw, 9rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 750;
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Variante claire (html sans .dark) : les valeurs accordees au theme sombre
+   passent sur des equivalents AA sur fond clair. Scoping :root:not(.dark) +
+   classes propres a ce fichier : sans effet residuel sur le back-office si
+   le bundle front reste charge apres une navigation SPA.
+   -------------------------------------------------------------------------- */
+
+:root:not(.dark) {
+    --front-accent-text: #4338ca;
+}
+
+:root:not(.dark) .badge-live {
+    color: #047857;
+}
+
+:root:not(.dark) .front-console-rows .ok {
+    color: #047857;
+}
+
+:root:not(.dark) .front-console-rows .warn {
+    color: #92400e;
+}
+
+/* --------------------------------------------------------------------------
+   Mouvement reduit : animations coupees, contenu visible immediatement
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .front-console,
+    .front-price-amount--swap,
+    .front-bill-note--swap {
+        transition: none;
+    }
+
+    .front-glow--a,
+    .front-glow--b,
+    .front-glow--top,
+    .front-eyebrow .dot,
+    .badge-live .pulse,
+    .front-hero-visual,
+    .front-chip--a,
+    .front-chip--b,
+    .front-chip::before,
+    .front-bars span,
+    .front-marquee-track,
+    .front-plan--popular::before {
+        animation: none;
+    }
+
+    .front-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
