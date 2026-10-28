@@ -11,6 +11,7 @@ import { index as gatewayKeysIndex } from '@/routes/admin/gateway/keys';
 import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
 import { index as pricingPlansIndex } from '@/routes/admin/pricing/plans';
+import { index as webhooksEndpointsIndex } from '@/routes/admin/webhooks/endpoints';
 import { edit as profileEdit } from '@/routes/admin/profile';
 import { logout } from '@/routes';
 import '../../../css/back.css';
@@ -86,11 +87,18 @@ const connectorsEnabled = computed(
             ?.enabled ?? false,
 );
 
+const webhooksEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'webhooks')
+            ?.enabled ?? false,
+);
+
 /* Liens des modules metier reellement actives : une entree sans lien reste
    grise (« a venir »). Pricing pointe vers la liste des plans ; les tables
    de prix sont atteignables depuis cet ecran. La gestion des cles Gateway
-   est reservee aux administrateurs (403 pour les autres roles), tandis que
-   le CRUD Connectors est ouvert aux administrateurs ET aux editeurs. */
+   et des endpoints Webhooks est reservee aux administrateurs (403 pour les
+   autres roles), tandis que le CRUD Connectors est ouvert aux
+   administrateurs ET aux editeurs. */
 const enabledModuleHrefs = computed<Record<string, string>>(() => {
     const hrefs: Record<string, string> = {};
 
@@ -110,16 +118,22 @@ const enabledModuleHrefs = computed<Record<string, string>>(() => {
         hrefs.connectors = connectorsIndex.url();
     }
 
+    if (webhooksEnabled.value && user.value?.role === 'admin') {
+        hrefs.webhooks = webhooksEndpointsIndex.url();
+    }
+
     return hrefs;
 });
 
 const moduleNav = computed(() =>
     moduleCatalog
-        /* L'entree Gateway n'est pas affichee du tout aux non-admins :
-           son ecran d'administration leur est interdit cote serveur. */
+        /* Les entrees Gateway et Webhooks ne sont pas affichees du tout
+           aux non-admins : leurs ecrans d'administration leur sont
+           interdits cote serveur. */
         .filter(
             (module) =>
-                module.slug !== 'gateway' || user.value?.role === 'admin',
+                (module.slug !== 'gateway' && module.slug !== 'webhooks') ||
+                user.value?.role === 'admin',
         )
         .map((module) => ({
             ...module,
@@ -145,6 +159,10 @@ const sectionTitle = computed(() => {
 
     if (page.url.startsWith('/admin/connectors')) {
         return 'Connectors';
+    }
+
+    if (page.url.startsWith('/admin/webhooks')) {
+        return 'Webhooks';
     }
 
     if (page.url.startsWith('/admin/modules')) {

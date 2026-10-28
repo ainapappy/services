@@ -18,6 +18,14 @@ import type {
     PricingTableForm,
     PricingTableListItem,
 } from './pricing';
+import type {
+    WebhookDelivery,
+    WebhookDeliveryDetail,
+    WebhookDeliveryFilters,
+    WebhookEndpoint,
+    WebhookEndpointForm,
+    WebhookEndpointOption,
+} from './webhook';
 
 /**
  * Props partagees par toutes les pages Inertia, telles que sérialisées par
@@ -96,6 +104,45 @@ export type BackGatewayKeysPageProps = AppSharedProps & {
 export type BackPricingTableFormPageProps = AppSharedProps & {
     table?: PricingTableForm;
     plans: PricingPlanOption[];
+};
+
+/**
+ * Props de la page `back/Webhooks/Endpoints` (liste des endpoints sortants).
+ * Le secret fraîchement créé transite exclusivement par le flash de session
+ * partagé sous `flash.secret` par le middleware : il n'est disponible qu'une
+ * seule fois et n'existe dans aucun autre type.
+ */
+export type BackWebhooksEndpointsPageProps = AppSharedProps & {
+    endpoints: WebhookEndpoint[];
+    flash?: { secret?: string };
+};
+
+/**
+ * Props de la page `back/Webhooks/EndpointForm` (création et édition).
+ * Le secret n'est jamais rapatrié : la régénération renvoie le nouveau
+ * secret une seule fois, via le flash `flash.secret`.
+ */
+export type BackWebhooksEndpointFormPageProps = AppSharedProps & {
+    endpoint?: WebhookEndpointForm;
+    flash?: { secret?: string };
+};
+
+/**
+ * Props de la page `back/Webhooks/Deliveries` (journal des deliveries).
+ * La liste des evenements filtrables arrive sous `eventsDisponibles`
+ * (contrat) ou `events` (controleur) selon la version du backend.
+ */
+export type BackWebhooksDeliveriesPageProps = AppSharedProps & {
+    deliveries: WebhookDelivery[];
+    filters: WebhookDeliveryFilters;
+    endpoints: WebhookEndpointOption[];
+    eventsDisponibles?: string[];
+    events?: string[];
+};
+
+/** Props de la page `back/Webhooks/Delivery` (détail d'une delivery). */
+export type BackWebhooksDeliveryPageProps = AppSharedProps & {
+    delivery: WebhookDeliveryDetail;
 };
 
 /** Props de la page `back/Login` (écran de connexion Fortify). */

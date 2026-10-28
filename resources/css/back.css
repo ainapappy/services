@@ -648,6 +648,65 @@ body {
 }
 
 /* --------------------------------------------------------------------------
+   Filtres de listes (module Webhooks : journal des deliveries)
+   -------------------------------------------------------------------------- */
+
+/* Rangee de filtres alignes sur la ligne de base des controles. */
+.back-filters {
+    align-items: flex-end;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.back-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    min-width: 10rem;
+}
+
+/* --------------------------------------------------------------------------
+   Bloc JSON de payload (module Webhooks : detail d'une delivery)
+   -------------------------------------------------------------------------- */
+
+/* Fond sombre ink, police mono, defilement horizontal : le payload reste
+   lisible meme sur de longues chaines. La coloration est faite par tokens
+   (spans rendus par le composant, jamais par v-html). */
+.back-json {
+    background-color: var(--color-ink);
+    border-radius: 8px;
+    color: #e4e4e7;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.5rem;
+    margin: 0;
+    overflow-x: auto;
+    padding: 0.875rem 1rem;
+}
+
+.back-json-line {
+    display: block;
+    white-space: pre;
+}
+
+.back-json-tok--key {
+    color: #a5b4fc;
+}
+
+.back-json-tok--string {
+    color: #86efac;
+}
+
+.back-json-tok--number {
+    color: #fcd34d;
+}
+
+.back-json-tok--literal {
+    color: #f0abfc;
+}
+
+/* --------------------------------------------------------------------------
    Mouvement reduit
    -------------------------------------------------------------------------- */
 

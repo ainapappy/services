@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Gateway\Models\ApiKey;
+use App\Domain\Webhooks\Models\WebhookEndpoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -78,4 +79,26 @@ function gatewayKey(string $secret, array $attributes = []): ApiKey
 function withBearer(string $secret): array
 {
     return ['Authorization' => 'Bearer '.$secret];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Webhooks helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Generate a fresh plaintext webhook secret (64 hex chars).
+ */
+function webhookSecret(): string
+{
+    return WebhookEndpoint::generateSecret();
+}
+
+/**
+ * Create a webhook endpoint whose plaintext secret is known to the test.
+ */
+function webhookEndpoint(string $secret, array $attributes = []): WebhookEndpoint
+{
+    return WebhookEndpoint::factory()->create(array_merge($attributes, ['secret' => $secret]));
 }
