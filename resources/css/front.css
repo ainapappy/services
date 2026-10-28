@@ -1,5 +1,5 @@
 /* Charte FRONT-OFFICE (vitrine claire) - entree Vite dediee.
-   Aucune regle partagee avec back.scss hors tokens.css.
+   Aucune regle partagee avec back.css hors tokens.css.
    Les classes metier sont portees par les composants front/. */
 @import 'tailwindcss';
 @import './tokens.css';

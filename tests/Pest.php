@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\Gateway\Models\ApiKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +48,34 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/*
+|--------------------------------------------------------------------------
+| Gateway helpers
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Generate a fresh plaintext API key secret ("sk_" + 40 hex chars).
+ */
+function gatewaySecret(): string
+{
+    return ApiKey::generateSecret();
+}
+
+/**
+ * Create an API key whose plaintext secret is known to the test.
+ */
+function gatewayKey(string $secret, array $attributes = []): ApiKey
+{
+    return ApiKey::factory()->forSecret($secret)->create($attributes);
+}
+
+/**
+ * The headers sending a secret through the "Authorization: Bearer" scheme.
+ */
+function withBearer(string $secret): array
+{
+    return ['Authorization' => 'Bearer '.$secret];
 }

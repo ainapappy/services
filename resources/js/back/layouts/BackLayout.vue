@@ -1,17 +1,18 @@
 <script setup lang="ts">
 // Coquille back-office : sidebar sombre + en-tete avec menu utilisateur.
-// Aucun import hors vue / @inertiajs / types / back.scss : les arbres
+// Aucun import hors vue / @inertiajs / types / back.css : les arbres
 // front/ et back/ restent etanches.
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { AppSharedProps } from '@/types';
 import { dashboard } from '@/routes/admin';
+import { index as gatewayKeysIndex } from '@/routes/admin/gateway/keys';
 import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
 import { index as pricingPlansIndex } from '@/routes/admin/pricing/plans';
 import { edit as profileEdit } from '@/routes/admin/profile';
 import { logout } from '@/routes';
-import '../../../css/back.scss';
+import '../../../css/back.css';
 
 const page = usePage<AppSharedProps>();
 const user = computed(() => page.props.auth.user);
@@ -72,9 +73,16 @@ const pricingEnabled = computed(
             ?.enabled ?? false,
 );
 
+const gatewayEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'gateway')
+            ?.enabled ?? false,
+);
+
 /* Liens des modules metier reellement actives : une entree sans lien reste
    grise (« a venir »). Pricing pointe vers la liste des plans ; les tables
-   de prix sont atteignables depuis cet ecran. */
+   de prix sont atteignables depuis cet ecran. La gestion des cles Gateway
+   est reservee aux administrateurs (403 pour les autres roles). */
 const enabledModuleHrefs = computed<Record<string, string>>(() => {
     const hrefs: Record<string, string> = {};
 
@@ -86,14 +94,25 @@ const enabledModuleHrefs = computed<Record<string, string>>(() => {
         hrefs.pricing = pricingPlansIndex.url();
     }
 
+    if (gatewayEnabled.value && user.value?.role === 'admin') {
+        hrefs.gateway = gatewayKeysIndex.url();
+    }
+
     return hrefs;
 });
 
 const moduleNav = computed(() =>
-    moduleCatalog.map((module) => ({
-        ...module,
-        href: enabledModuleHrefs.value[module.slug] ?? null,
-    })),
+    moduleCatalog
+        /* L'entree Gateway n'est pas affichee du tout aux non-admins :
+           son ecran d'administration leur est interdit cote serveur. */
+        .filter(
+            (module) =>
+                module.slug !== 'gateway' || user.value?.role === 'admin',
+        )
+        .map((module) => ({
+            ...module,
+            href: enabledModuleHrefs.value[module.slug] ?? null,
+        })),
 );
 
 const isActive = (base: string): boolean =>
@@ -106,6 +125,10 @@ const sectionTitle = computed(() => {
 
     if (page.url.startsWith('/admin/pricing')) {
         return 'Pricing';
+    }
+
+    if (page.url.startsWith('/admin/gateway')) {
+        return 'Gateway';
     }
 
     if (page.url.startsWith('/admin/modules')) {

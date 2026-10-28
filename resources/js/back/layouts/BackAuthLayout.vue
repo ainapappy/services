@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // Mini-layout des ecrans d'authentification back-office (login, mot de
 // passe oublie, reinitialisation, verification d'email) : page autonome
-// centree, hors sidebar. Aucun import hors @inertiajs/vue3 et back.scss.
-import '../../../css/back.scss';
+// centree, hors sidebar. Aucun import hors @inertiajs/vue3 et back.css.
+import '../../../css/back.css';
 
 defineProps<{
     title: string;

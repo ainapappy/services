@@ -54,6 +54,12 @@ class HandleInertiaRequests extends Middleware
                 ])
                 ->values()
                 ->all(),
+            // Flashed once by the Gateway key store action: the freshly
+            // created secret crosses the wire a single time and is then
+            // gone from the session.
+            'flash' => [
+                'secret' => fn (): ?string => $request->session()->get('secret'),
+            ],
         ];
     }
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Coquille front-office autoportante : aucun import hors vue/@inertiajs
-// (et la charte front.scss). Les deux arbres front/ et back/ sont etanches.
-import '../../../css/front.scss';
+// (et la charte front.css). Les deux arbres front/ et back/ sont etanches.
+import '../../../css/front.css';
 
 const year = new Date().getFullYear();
 </script>

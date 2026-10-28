@@ -1,4 +1,5 @@
 import type { User } from './auth';
+import type { ApiKey } from './apiKey';
 import type {
     LandingPageForm,
     LandingPageListItem,
@@ -57,6 +58,17 @@ export type BackPricingPlanFormPageProps = AppSharedProps & {
 /** Props de la page `back/Pricing/Tables` (liste des tables de prix). */
 export type BackPricingTablesPageProps = AppSharedProps & {
     tables: PricingTableListItem[];
+};
+
+/**
+ * Props de la page `back/Gateway/Keys` (gestion des clés d'API).
+ * Le secret fraîchement créé transite exclusivement par le flash de
+ * session partagé sous `flash.secret` par le middleware : il n'est
+ * disponible qu'une seule fois et n'existe dans aucun autre type.
+ */
+export type BackGatewayKeysPageProps = AppSharedProps & {
+    keys: ApiKey[];
+    flash?: { secret?: string };
 };
 
 /** Props de la page `back/Pricing/TableForm` (création et édition). */

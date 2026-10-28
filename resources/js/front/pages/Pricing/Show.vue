@@ -11,8 +11,8 @@ import { home, pricing } from '@/routes';
 import type { FrontPricingShowPageProps, PricingShowPlan } from '@/types';
 import { vReveal } from '../../directives/reveal';
 // Charte front indispensable : sans cet import, aucune regle front-* n'atteint
-// la page (front.scss est charge par les pages front, pas par le bundle global).
-import '../../../../css/front.scss';
+// la page (front.css est charge par les pages front, pas par le bundle global).
+import '../../../../css/front.css';
 
 const props = defineProps<FrontPricingShowPageProps>();
 
