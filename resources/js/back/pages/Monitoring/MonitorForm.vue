@@ -8,13 +8,36 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { computed, watch } from 'vue';
 import type { BackMonitoringMonitorFormPageProps, MonitorType } from '@/types';
 import { index, store, update } from '@/routes/admin/monitoring/monitors';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { Switch } from '@/components/ui/switch';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackCard from '../../components/BackCard.vue';
-import BackField from '../../components/BackField.vue';
-import BackInput from '../../components/BackInput.vue';
-import BackStatus from '../../components/BackStatus.vue';
-import BackToggle from '../../components/BackToggle.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 const props = defineProps<BackMonitoringMonitorFormPageProps>();
 
@@ -176,133 +199,136 @@ function onSubmit(): void {
         <Head :title="isEdit ? 'Modifier le moniteur' : 'Nouveau moniteur'" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="index.url()" class="back-link"> Moniteurs </a>
-                    <span class="mx-1">/</span>
-                    <span>{{
-                        isEdit ? existing?.name : 'Nouveau moniteur'
-                    }}</span>
-                </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    {{ isEdit ? 'Modifier le moniteur' : 'Nouveau moniteur' }}
-                </h1>
-            </header>
+            <BackPageHeader
+                :title="isEdit ? 'Modifier le moniteur' : 'Nouveau moniteur'"
+            />
 
             <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
-                <!-- Identite et cible -->
-                <BackCard
-                    title="Moniteur"
-                    description="Cible supervisée périodiquement par la commande de contrôle (toutes les 5 minutes)."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Nom"
-                            field-id="name"
-                            :error="form.errors.name"
-                            help="Ex. Blog vitrine, Gateway production, Webhooks sortants."
-                        >
-                            <BackInput
+                <Card>
+                    <!-- Identite et cible -->
+                    <CardHeader>
+                        <CardTitle>Moniteur</CardTitle>
+                        <CardDescription>
+                            Cible supervisée périodiquement par la commande de
+                            contrôle (toutes les 5 minutes).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-5">
+                        <Field>
+                            <FieldLabel for="name">Nom</FieldLabel>
+                            <Input
                                 id="name"
                                 name="name"
                                 v-model="form.name"
                                 required
                                 placeholder="Ex. Blog vitrine"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Ex. Blog vitrine, Gateway production, Webhooks
+                                sortants.
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.name]" />
+                        </Field>
 
-                        <BackField
-                            label="Type"
-                            field-id="type"
-                            :error="form.errors.type"
-                            help="Le champ de cible s'adapte au type choisi."
-                        >
-                            <select
-                                id="type"
-                                name="type"
-                                v-model="form.type"
-                                class="back-input back-select"
-                            >
-                                <option
-                                    v-for="option in typeOptions"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ option.label }}
-                                </option>
-                            </select>
-                            <p class="back-help mt-1">
+                        <Field>
+                            <FieldLabel for="type">Type</FieldLabel>
+                            <Select v-model="form.type">
+                                <SelectTrigger id="type" class="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="option in typeOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FieldDescription>
+                                Le champ de cible s'adapte au type choisi.
+                            </FieldDescription>
+                            <FieldDescription>
                                 {{
                                     typeOptions.find(
                                         (option) => option.value === form.type,
                                     )?.description
                                 }}
-                            </p>
-                        </BackField>
+                            </FieldDescription>
+                            <FieldError :errors="[form.errors.type]" />
+                        </Field>
 
                         <!-- Cible adaptative : connecteur ->
                              select parmi les connecteurs existants -->
-                        <BackField
-                            v-if="form.type === 'connector'"
-                            label="Connecteur supervisé"
-                            field-id="connector_id"
-                            :error="targetError()"
-                            help="Le moniteur réutilise les credentials enregistrés pour tester la connexion."
-                        >
-                            <select
-                                id="connector_id"
-                                name="connector_id"
-                                v-model="form.connector_id"
-                                class="back-input back-select"
-                            >
-                                <option value="">
-                                    Sélectionnez un connecteur…
-                                </option>
-                                <option
-                                    v-for="connector in props.connectors"
-                                    :key="connector.id"
-                                    :value="String(connector.id)"
-                                >
-                                    {{ connector.name }}
-                                </option>
-                            </select>
-                        </BackField>
+                        <Field v-if="form.type === 'connector'">
+                            <FieldLabel for="connector_id">
+                                Connecteur supervisé
+                            </FieldLabel>
+                            <Select v-model="form.connector_id">
+                                <SelectTrigger id="connector_id" class="w-full">
+                                    <SelectValue
+                                        placeholder="Sélectionnez un connecteur…"
+                                    />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="connector in props.connectors"
+                                        :key="connector.id"
+                                        :value="String(connector.id)"
+                                    >
+                                        {{ connector.name }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FieldDescription>
+                                Le moniteur réutilise les credentials
+                                enregistrés pour tester la connexion.
+                            </FieldDescription>
+                            <FieldError :errors="[targetError()]" />
+                        </Field>
 
                         <!-- Cible adaptative : gateway -> texte explicatif -->
-                        <BackStatus v-else-if="form.type === 'gateway'">
-                            Cible fixe : la gateway est vérifiée via son
-                            endpoint interne de santé (<code
-                                class="font-mono text-xs"
-                                >GET /api/v1/health</code
-                            >). Aucune configuration supplémentaire n'est
-                            nécessaire.
-                        </BackStatus>
+                        <Alert v-else-if="form.type === 'gateway'">
+                            <AlertDescription>
+                                Cible fixe : la gateway est vérifiée via son
+                                endpoint interne de santé (<code
+                                    class="font-mono text-xs"
+                                    >GET /api/v1/health</code
+                                >). Aucune configuration supplémentaire n'est
+                                nécessaire.
+                            </AlertDescription>
+                        </Alert>
 
                         <!-- Cible adaptative : webhooks -> texte explicatif -->
-                        <BackStatus v-else>
-                            Cible fixe : la santé est déduite des deliveries
-                            récentes des endpoints webhooks actifs (échecs ou
-                            tentatives en souffrance). Aucune configuration
-                            supplémentaire n'est nécessaire.
-                        </BackStatus>
-                    </div>
-                </BackCard>
+                        <Alert v-else>
+                            <AlertDescription>
+                                Cible fixe : la santé est déduite des deliveries
+                                récentes des endpoints webhooks actifs (échecs
+                                ou tentatives en souffrance). Aucune
+                                configuration supplémentaire n'est nécessaire.
+                            </AlertDescription>
+                        </Alert>
+                    </CardContent>
 
-                <!-- Regles de controle -->
-                <BackCard
-                    title="Règles de contrôle"
-                    description="Fréquence, seuil de latence et activation."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Seuil de latence (ms)"
-                            field-id="latency_threshold_ms"
-                            :error="form.errors.latency_threshold_ms"
-                            help="Au-dessus de ce seuil, le contrôle passe en dégradé. Laissez vide pour ne pas tenir compte de la latence."
-                        >
-                            <BackInput
+                    <Separator />
+
+                    <!-- Regles de controle -->
+                    <CardContent class="flex flex-col gap-5">
+                        <div class="flex flex-col gap-1.5">
+                            <h2 class="text-base leading-none font-medium">
+                                Règles de contrôle
+                            </h2>
+                            <p class="text-sm text-muted-foreground">
+                                Fréquence, seuil de latence et activation.
+                            </p>
+                        </div>
+
+                        <Field>
+                            <FieldLabel for="latency_threshold_ms">
+                                Seuil de latence (ms)
+                            </FieldLabel>
+                            <Input
                                 id="latency_threshold_ms"
                                 name="latency_threshold_ms"
                                 type="number"
@@ -311,46 +337,48 @@ function onSubmit(): void {
                                 v-model="form.latency_threshold_ms"
                                 placeholder="Ex. 2000"
                             />
-                        </BackField>
-
-                        <div class="flex items-center gap-3">
-                            <BackToggle
-                                :checked="form.active"
-                                label="Moniteur actif"
-                                @toggle="form.active = !form.active"
+                            <FieldDescription>
+                                Au-dessus de ce seuil, le contrôle passe en
+                                dégradé. Laissez vide pour ne pas tenir compte
+                                de la latence.
+                            </FieldDescription>
+                            <FieldError
+                                :errors="[form.errors.latency_threshold_ms]"
                             />
-                            <div class="flex flex-col">
-                                <span
-                                    class="text-sm font-medium text-[var(--color-ink)]"
-                                >
-                                    {{ form.active ? 'Actif' : 'Inactif' }}
-                                </span>
-                                <span class="text-xs text-[var(--color-muted)]">
-                                    Un moniteur inactif n'est plus contrôlé ;
-                                    ses contrôles et alertes passés restent
-                                    consultables dans l'historique.
-                                </span>
-                            </div>
-                            <p v-if="form.errors.active" class="back-error">
-                                {{ form.errors.active }}
-                            </p>
-                        </div>
-                    </div>
-                </BackCard>
+                        </Field>
 
-                <!-- Actions -->
-                <div class="flex items-center justify-end gap-3">
-                    <a :href="index.url()" class="back-btn back-btn--secondary">
-                        Annuler
-                    </a>
-                    <BackButton type="submit" :loading="form.processing">
-                        {{
-                            isEdit
-                                ? 'Enregistrer les modifications'
-                                : 'Créer le moniteur'
-                        }}
-                    </BackButton>
-                </div>
+                        <Field orientation="horizontal">
+                            <Switch id="active" v-model:checked="form.active" />
+                            <FieldContent>
+                                <FieldLabel for="active">
+                                    Surveillance active
+                                </FieldLabel>
+                                <FieldDescription>
+                                    {{ form.active ? 'Actif' : 'Inactif' }} — Un
+                                    moniteur inactif n'est plus contrôlé ; ses
+                                    contrôles et alertes passés restent
+                                    consultables dans l'historique.
+                                </FieldDescription>
+                                <FieldError :errors="[form.errors.active]" />
+                            </FieldContent>
+                        </Field>
+                    </CardContent>
+
+                    <!-- Actions -->
+                    <CardFooter class="justify-end gap-3 border-t pt-6">
+                        <Button variant="outline" as-child>
+                            <a :href="index.url()">Annuler</a>
+                        </Button>
+                        <Button type="submit" :disabled="form.processing">
+                            <Spinner v-if="form.processing" class="size-4" />
+                            {{
+                                isEdit
+                                    ? 'Enregistrer les modifications'
+                                    : 'Créer le moniteur'
+                            }}
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </section>
     </BackLayout>

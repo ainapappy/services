@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// Gestion des moniteurs : tableau (nom, type en chip, cible, seuil de
-// latence, badge actif/inactif, dernier etat + date relative), actions
-// editer / supprimer confirmee, acces a l'historique des controles et
-// creation. La bascule d'activation passe par le formulaire (pas de
-// route dediee : store/update font foi). Aucun import hors arbre back/.
+// Gestion des moniteurs : tableau (nom, type, cible, seuil de latence,
+// badge actif/inactif, dernier etat + date relative), menu d'actions par
+// ligne (edition, liens dashboard et historique, suppression confirmee
+// par AlertDialog) et creation. La bascule d'activation passe par le
+// formulaire (pas de route dediee : store/update font foi). Aucun import
+// hors arbre back/.
 import { Head, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import type {
@@ -11,28 +12,81 @@ import type {
     MonitorListItem,
     MonitorStatus,
 } from '@/types';
-import {
-    MONITOR_STATUS_VARIANTS,
-    MONITOR_TYPE_LABELS,
-    monitorStatusLabel,
-} from '@/types';
+import { MONITOR_TYPE_LABELS, monitorStatusLabel } from '@/types';
 import { dashboard, history as historyIndex } from '@/routes/admin/monitoring';
 import { create, destroy, edit } from '@/routes/admin/monitoring/monitors';
+import {
+    EllipsisVerticalIcon,
+    HistoryIcon,
+    LayoutDashboardIcon,
+    PencilIcon,
+    PlusIcon,
+    RadarIcon,
+    Trash2Icon,
+} from '@lucide/vue';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 const props = defineProps<BackMonitoringMonitorsPageProps>();
 
 /* ------------------------------------------------------------------ */
-/* Libelles et variants de la charte                                    */
+/* Libelles et variants de badges                                       */
 /* ------------------------------------------------------------------ */
+
+/* Variante de Badge associee a chaque statut de controle (ui shadcn) ;
+   aucun controle encore realise -> « jamais controle » en secondaire. */
+const STATUS_BADGE_VARIANTS: Record<
+    MonitorStatus,
+    'success' | 'warning' | 'destructive'
+> = {
+    up: 'success',
+    degraded: 'warning',
+    down: 'destructive',
+};
 
 function statusVariant(
     status: MonitorStatus | null,
-): 'success' | 'warning' | 'danger' | 'muted' {
-    return status === null ? 'muted' : MONITOR_STATUS_VARIANTS[status];
+): 'success' | 'warning' | 'destructive' | 'secondary' {
+    return status === null ? 'secondary' : STATUS_BADGE_VARIANTS[status];
 }
 
 /* ------------------------------------------------------------------ */
@@ -85,17 +139,10 @@ function formatRelative(value: string | null): string {
 /* Suppression                                                          */
 /* ------------------------------------------------------------------ */
 
+/* Confirmee par AlertDialog, puis retour a l'index actualise. */
 const deletingId = ref<number | null>(null);
 
 function onDestroy(monitor: MonitorListItem): void {
-    if (
-        !window.confirm(
-            `Supprimer le moniteur « ${monitor.name} » ? Son historique de contrôles et ses alertes seront définitivement effacés. Cette action est irréversible.`,
-        )
-    ) {
-        return;
-    }
-
     if (deletingId.value !== null) {
         return;
     }
@@ -115,162 +162,212 @@ function onDestroy(monitor: MonitorListItem): void {
         <Head title="Moniteurs de supervision" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-wrap items-start justify-between gap-4">
-                <div class="flex flex-col gap-1">
-                    <p class="text-sm text-[var(--color-muted)]">
-                        <a :href="dashboard.url()" class="back-link">
-                            Monitoring
+            <BackPageHeader
+                title="Moniteurs"
+                description="Cibles supervisées périodiquement : connecteurs (test de connexion), gateway (endpoint de santé) et webhooks (deliveries récentes). L'état courant est visible sur le tableau de bord Monitoring."
+            >
+                <template #actions>
+                    <Button as-child>
+                        <a :href="create.url()">
+                            <PlusIcon />
+                            Nouveau moniteur
                         </a>
-                        <span class="mx-1">/</span>
-                        <span>Moniteurs</span>
-                    </p>
-                    <h1
-                        class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
-                        Moniteurs de supervision
-                    </h1>
-                    <p class="text-sm text-[var(--color-muted)]">
-                        Cibles supervisées périodiquement : connecteurs (test de
-                        connexion), gateway (endpoint de santé) et webhooks
-                        (deliveries récentes). L'état courant est visible sur le
-                        <a :href="dashboard.url()" class="back-link"
-                            >tableau de bord Monitoring</a
-                        >.
-                    </p>
-                </div>
-
-                <div class="flex shrink-0 items-center gap-3">
-                    <a
-                        :href="historyIndex.url()"
-                        class="back-btn back-btn--secondary"
-                    >
-                        Historique des contrôles
-                    </a>
-                    <a :href="create.url()" class="back-btn back-btn--primary">
-                        Nouveau moniteur
-                    </a>
-                </div>
-            </header>
+                    </Button>
+                </template>
+            </BackPageHeader>
 
             <!-- Etat vide -->
-            <BackEmptyState
-                v-if="props.monitors.length === 0"
-                title="Aucun moniteur"
-                :wide="true"
-            >
-                Créez un moniteur pour superviser un connecteur, la gateway ou
-                les webhooks : chaque contrôle est journalisé et une alerte est
-                levée dès qu'une cible passe hors ligne.
-                <template #action>
-                    <a :href="create.url()" class="back-btn back-btn--primary">
-                        Créer un moniteur
-                    </a>
-                </template>
-            </BackEmptyState>
+            <Empty v-if="props.monitors.length === 0" class="rounded-xl border">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <RadarIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucun moniteur</EmptyTitle>
+                    <EmptyDescription>
+                        Créez un moniteur pour superviser un connecteur, la
+                        gateway ou les webhooks : chaque contrôle est journalisé
+                        et une alerte est levée dès qu'une cible passe hors
+                        ligne.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button as-child>
+                        <a :href="create.url()">Créer un moniteur</a>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Tableau -->
-            <div v-else class="back-card overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">
+            <Card v-else class="overflow-hidden py-0">
+                <Table>
+                    <TableCaption class="sr-only">
                         Moniteurs : nom, type, cible, seuil de latence, état,
                         dernier contrôle et actions
-                    </caption>
-                    <thead>
-                        <tr
-                            class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                        >
-                            <th scope="col" class="px-6 py-3">Moniteur</th>
-                            <th scope="col" class="px-6 py-3">Type</th>
-                            <th scope="col" class="px-6 py-3">Cible</th>
-                            <th scope="col" class="px-6 py-3">Seuil</th>
-                            <th scope="col" class="px-6 py-3">État</th>
-                            <th scope="col" class="px-6 py-3">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead class="h-12 px-4">Moniteur</TableHead>
+                            <TableHead class="h-12 px-4">Type</TableHead>
+                            <TableHead class="h-12 px-4">Cible</TableHead>
+                            <TableHead class="h-12 px-4">Seuil</TableHead>
+                            <TableHead class="h-12 px-4">État</TableHead>
+                            <TableHead class="h-12 px-4">
                                 Dernier contrôle
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-right">
+                            </TableHead>
+                            <TableHead class="h-12 px-4 text-right">
                                 Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
                             v-for="monitor in props.monitors"
                             :key="monitor.id"
-                            class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                         >
-                            <td class="px-6 py-4">
-                                <p class="font-medium text-[var(--color-ink)]">
-                                    {{ monitor.name }}
-                                </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="back-chip">
+                            <TableCell class="px-4 py-3">
+                                <p class="font-medium">{{ monitor.name }}</p>
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
+                                <Badge variant="outline">
                                     {{ MONITOR_TYPE_LABELS[monitor.type] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
                                 <p
-                                    class="max-w-[16rem] truncate font-mono text-xs text-[var(--color-ink)]"
+                                    class="max-w-[16rem] truncate font-mono text-xs"
                                     :title="monitor.targetSummary"
                                 >
                                     {{ monitor.targetSummary }}
                                 </p>
-                            </td>
-                            <td
-                                class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                            >
+                            </TableCell>
+                            <TableCell class="px-4 py-3 tabular-nums">
                                 {{ formatLatency(monitor.latencyThresholdMs) }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
+                                <Badge
                                     :variant="
-                                        monitor.active ? 'success' : 'muted'
+                                        monitor.active ? 'success' : 'secondary'
                                     "
                                 >
                                     {{ monitor.active ? 'Actif' : 'Inactif' }}
-                                </BackBadge>
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-3">
+                                <Badge
                                     :variant="statusVariant(monitor.lastStatus)"
                                 >
                                     {{ monitorStatusLabel(monitor.lastStatus) }}
-                                </BackBadge>
-                                <p
-                                    class="mt-0.5 text-xs text-[var(--color-muted)]"
-                                >
+                                </Badge>
+                                <p class="mt-0.5 text-xs text-muted-foreground">
                                     {{ formatRelative(monitor.lastCheckedAt) }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div
-                                    class="flex items-center justify-end gap-3"
-                                >
-                                    <a
-                                        :href="
-                                            edit({ monitor: monitor.id }).url
-                                        "
-                                        class="back-link"
-                                    >
-                                        Éditer
-                                    </a>
-                                    <BackButton
-                                        variant="danger"
-                                        :loading="deletingId === monitor.id"
-                                        :disabled="
-                                            deletingId !== null &&
-                                            deletingId !== monitor.id
-                                        "
-                                        @click="onDestroy(monitor)"
-                                    >
-                                        Supprimer
-                                    </BackButton>
+                            </TableCell>
+                            <TableCell class="px-4 py-3 text-right">
+                                <div class="flex justify-end">
+                                    <AlertDialog>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger as-child>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    :aria-label="`Actions pour le moniteur ${monitor.name}`"
+                                                >
+                                                    <EllipsisVerticalIcon />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                align="end"
+                                                class="w-48"
+                                            >
+                                                <DropdownMenuItem as-child>
+                                                    <a
+                                                        :href="
+                                                            edit({
+                                                                monitor:
+                                                                    monitor.id,
+                                                            }).url
+                                                        "
+                                                    >
+                                                        <PencilIcon />
+                                                        Éditer
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem as-child>
+                                                    <a :href="dashboard.url()">
+                                                        <LayoutDashboardIcon />
+                                                        Tableau de bord
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem as-child>
+                                                    <a
+                                                        :href="
+                                                            historyIndex.url()
+                                                        "
+                                                    >
+                                                        <HistoryIcon />
+                                                        Historique
+                                                    </a>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <AlertDialogTrigger as-child>
+                                                    <DropdownMenuItem
+                                                        variant="destructive"
+                                                    >
+                                                        <Trash2Icon />
+                                                        Supprimer
+                                                    </DropdownMenuItem>
+                                                </AlertDialogTrigger>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Supprimer le moniteur ?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Supprimer le moniteur «
+                                                    {{ monitor.name }} » ? Son
+                                                    historique de contrôles et
+                                                    ses alertes seront
+                                                    définitivement effacés.
+                                                    Cette action est
+                                                    irréversible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Annuler
+                                                </AlertDialogCancel>
+                                                <AlertDialogAction as-child>
+                                                    <Button
+                                                        variant="destructive"
+                                                        :disabled="
+                                                            deletingId !== null
+                                                        "
+                                                        @click="
+                                                            onDestroy(monitor)
+                                                        "
+                                                    >
+                                                        <Spinner
+                                                            v-if="
+                                                                deletingId ===
+                                                                monitor.id
+                                                            "
+                                                            class="size-4"
+                                                        />
+                                                        Supprimer
+                                                    </Button>
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
+            </Card>
         </section>
     </BackLayout>
 </template>

@@ -10,16 +10,57 @@ import { computed, ref, watch } from 'vue';
 import type { BackMonitoringHistoryPageProps, MonitorStatus } from '@/types';
 import {
     MONITOR_STATUS_LABELS,
-    MONITOR_STATUS_VARIANTS,
     MONITOR_TYPE_LABELS,
     monitorStatusLabel,
 } from '@/types';
-import { dashboard, history as historyIndex } from '@/routes/admin/monitoring';
+import { history as historyIndex } from '@/routes/admin/monitoring';
+import { ClockIcon, HistoryIcon } from '@lucide/vue';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Field, FieldLabel } from '@/components/ui/field';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
 
 const props = defineProps<BackMonitoringHistoryPageProps>();
+
+/* ------------------------------------------------------------------ */
+/* Libelles et variants de badges                                       */
+/* ------------------------------------------------------------------ */
+
+/* Variante de Badge associee a chaque statut de controle (ui shadcn). */
+const STATUS_BADGE_VARIANTS: Record<
+    MonitorStatus,
+    'success' | 'warning' | 'destructive'
+> = {
+    up: 'success',
+    degraded: 'warning',
+    down: 'destructive',
+};
 
 /* ------------------------------------------------------------------ */
 /* Options des filtres                                                  */
@@ -86,6 +127,23 @@ function applyFilters(): void {
     router.get(historyIndex.url(), activeQuery(), { preserveState: true });
 }
 
+/* Changement d'un select de filtre : l'etat local est mis a jour puis la
+   liste rechargee immediatement (equivalent de l'ancien @change). */
+function onFilterTypeChange(value: unknown): void {
+    filterType.value = String(value);
+    applyFilters();
+}
+
+function onFilterStatusChange(value: unknown): void {
+    filterStatus.value = String(value);
+    applyFilters();
+}
+
+function onFilterDaysChange(value: unknown): void {
+    filterDays.value = String(value);
+    applyFilters();
+}
+
 function resetFilters(): void {
     filterType.value = '';
     filterStatus.value = '';
@@ -148,204 +206,198 @@ function formatLatency(latencyMs: number | null): string {
         <Head title="Historique des contrôles" />
 
         <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="dashboard.url()" class="back-link">Monitoring</a>
-                    <span class="mx-1">/</span>
-                    <span>Historique</span>
-                </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                >
-                    Historique des contrôles
-                </h1>
-                <p class="text-sm text-[var(--color-muted)]">
-                    Journal des contrôles exécutés par la commande planifiée
-                    (toutes les 5 minutes) : statut, latence mesurée et éventuel
-                    message d'erreur.
-                </p>
-            </header>
+            <BackPageHeader
+                title="Historique des contrôles"
+                description="Journal des contrôles exécutés par la commande planifiée (toutes les 5 minutes) : statut, latence mesurée et éventuel message d'erreur."
+            />
 
             <!-- Filtres -->
-            <div class="back-card back-filters px-6 py-4">
-                <div class="back-filter min-w-40">
-                    <label class="back-help" for="filter-type">Type</label>
-                    <select
-                        id="filter-type"
-                        v-model="filterType"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Tous les types</option>
-                        <option
-                            v-for="[value, label] in typeOptions"
-                            :key="value"
-                            :value="value"
+            <Card>
+                <CardContent class="flex flex-wrap items-end gap-4">
+                    <Field class="min-w-40">
+                        <FieldLabel for="filter-type">Type</FieldLabel>
+                        <Select
+                            :model-value="filterType"
+                            @update:model-value="onFilterTypeChange"
                         >
-                            {{ label }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-type" class="w-full">
+                                <SelectValue placeholder="Tous les types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="[value, label] in typeOptions"
+                                    :key="value"
+                                    :value="value"
+                                >
+                                    {{ label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <div class="back-filter min-w-40">
-                    <label class="back-help" for="filter-status">Statut</label>
-                    <select
-                        id="filter-status"
-                        v-model="filterStatus"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Tous les statuts</option>
-                        <option
-                            v-for="[value, label] in statusOptions"
-                            :key="value"
-                            :value="value"
+                    <Field class="min-w-40">
+                        <FieldLabel for="filter-status">Statut</FieldLabel>
+                        <Select
+                            :model-value="filterStatus"
+                            @update:model-value="onFilterStatusChange"
                         >
-                            {{ label }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-status" class="w-full">
+                                <SelectValue placeholder="Tous les statuts" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="[value, label] in statusOptions"
+                                    :key="value"
+                                    :value="value"
+                                >
+                                    {{ label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <div class="back-filter min-w-40">
-                    <label class="back-help" for="filter-days">Période</label>
-                    <select
-                        id="filter-days"
-                        v-model="filterDays"
-                        class="back-input back-select"
-                        @change="applyFilters"
-                    >
-                        <option value="">Toutes les périodes</option>
-                        <option
-                            v-for="period in periodOptions"
-                            :key="period.value"
-                            :value="period.value"
+                    <Field class="min-w-40">
+                        <FieldLabel for="filter-days">Période</FieldLabel>
+                        <Select
+                            :model-value="filterDays"
+                            @update:model-value="onFilterDaysChange"
                         >
-                            {{ period.label }}
-                        </option>
-                    </select>
-                </div>
+                            <SelectTrigger id="filter-days" class="w-full">
+                                <SelectValue
+                                    placeholder="Toutes les périodes"
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="period in periodOptions"
+                                    :key="period.value"
+                                    :value="period.value"
+                                >
+                                    {{ period.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                <button
-                    v-if="hasActiveFilters"
-                    type="button"
-                    class="back-btn back-btn--secondary"
-                    @click="resetFilters"
-                >
-                    Réinitialiser
-                </button>
-            </div>
-
-            <!-- Etat vide : aucun resultat pour ces filtres -->
-            <BackEmptyState
-                v-if="checks.length === 0 && hasActiveFilters"
-                title="Aucun contrôle pour ces filtres"
-            >
-                Aucun contrôle journalisé ne correspond au type, au statut ou à
-                la période sélectionnés.
-                <template #action>
-                    <button
-                        type="button"
-                        class="back-btn back-btn--secondary"
+                    <Button
+                        v-if="hasActiveFilters"
+                        variant="ghost"
+                        size="sm"
                         @click="resetFilters"
                     >
+                        Réinitialiser
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <!-- Etat vide : aucun resultat pour ces filtres -->
+            <Empty
+                v-if="checks.length === 0 && hasActiveFilters"
+                class="rounded-xl border"
+            >
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <HistoryIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucun contrôle pour ces filtres</EmptyTitle>
+                    <EmptyDescription>
+                        Aucun contrôle journalisé ne correspond au type, au
+                        statut ou à la période sélectionnés.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button variant="outline" @click="resetFilters">
                         Réinitialiser les filtres
-                    </button>
-                </template>
-            </BackEmptyState>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Etat vide : aucun controle du tout -->
-            <BackEmptyState
-                v-else-if="checks.length === 0"
-                title="Aucun contrôle"
-            >
-                Les contrôles apparaîtront ici dès que la commande
-                <code class="font-mono text-xs">monitoring:run</code>
-                aura tourné (elle est planifiée toutes les 5 minutes).
-            </BackEmptyState>
+            <Empty v-else-if="checks.length === 0" class="rounded-xl border">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <ClockIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucun contrôle</EmptyTitle>
+                    <EmptyDescription>
+                        Les contrôles apparaîtront ici dès que la commande
+                        <code class="font-mono text-xs">monitoring:run</code>
+                        aura tourné (elle est planifiée toutes les 5 minutes).
+                    </EmptyDescription>
+                </EmptyHeader>
+            </Empty>
 
             <!-- Tableau -->
             <template v-else>
-                <div class="back-card overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <caption class="sr-only">
+                <Card class="overflow-hidden py-0">
+                    <Table>
+                        <TableCaption class="sr-only">
                             Contrôles : date, moniteur, type, statut, latence et
                             message
-                        </caption>
-                        <thead>
-                            <tr
-                                class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                            >
-                                <th scope="col" class="px-6 py-3">Date</th>
-                                <th scope="col" class="px-6 py-3">Moniteur</th>
-                                <th scope="col" class="px-6 py-3">Type</th>
-                                <th scope="col" class="px-6 py-3">Statut</th>
-                                <th scope="col" class="px-6 py-3">Latence</th>
-                                <th scope="col" class="px-6 py-3">Message</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
+                        </TableCaption>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead class="h-12 px-4">Date</TableHead>
+                                <TableHead class="h-12 px-4">
+                                    Moniteur
+                                </TableHead>
+                                <TableHead class="h-12 px-4">Type</TableHead>
+                                <TableHead class="h-12 px-4">Statut</TableHead>
+                                <TableHead class="h-12 px-4">Latence</TableHead>
+                                <TableHead class="h-12 px-4">Message</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            <TableRow
                                 v-for="check in visibleChecks"
                                 :key="check.id"
-                                class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                             >
-                                <td
-                                    class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                                >
+                                <TableCell class="px-4 py-3 tabular-nums">
                                     {{ formatDateTime(check.checkedAt) }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <p
-                                        class="font-medium text-[var(--color-ink)]"
-                                    >
+                                </TableCell>
+                                <TableCell class="px-4 py-3">
+                                    <p class="font-medium">
                                         {{ check.monitorName }}
                                     </p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="back-chip">
+                                </TableCell>
+                                <TableCell class="px-4 py-3">
+                                    <Badge variant="outline">
                                         {{ MONITOR_TYPE_LABELS[check.type] }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <BackBadge
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="px-4 py-3">
+                                    <Badge
                                         :variant="
-                                            MONITOR_STATUS_VARIANTS[
-                                                check.status
-                                            ]
+                                            STATUS_BADGE_VARIANTS[check.status]
                                         "
                                     >
                                         {{ monitorStatusLabel(check.status) }}
-                                    </BackBadge>
-                                </td>
-                                <td
-                                    class="px-6 py-4 text-[var(--color-ink)] tabular-nums"
-                                >
+                                    </Badge>
+                                </TableCell>
+                                <TableCell class="px-4 py-3 tabular-nums">
                                     {{ formatLatency(check.latencyMs) }}
-                                </td>
-                                <td class="px-6 py-4">
+                                </TableCell>
+                                <TableCell class="px-4 py-3">
                                     <p
                                         v-if="check.message"
-                                        class="max-w-[16rem] truncate text-xs text-[var(--color-muted)]"
+                                        class="max-w-[16rem] truncate text-xs text-muted-foreground"
                                         :title="check.message"
                                     >
                                         {{ check.message }}
                                     </p>
                                     <p
                                         v-else
-                                        class="text-xs text-[var(--color-muted)]"
+                                        class="text-xs text-muted-foreground"
                                     >
                                         —
                                     </p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                </TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Card>
 
-                <p
-                    v-if="hiddenCount > 0"
-                    class="text-xs text-[var(--color-muted)]"
-                >
+                <p v-if="hiddenCount > 0" class="text-xs text-muted-foreground">
                     Affichage limité aux {{ MAX_DISPLAY }} contrôles les plus
                     récents ; {{ hiddenCount.toLocaleString('fr-FR') }} entrées
                     supplémentaires existent dans le journal.
