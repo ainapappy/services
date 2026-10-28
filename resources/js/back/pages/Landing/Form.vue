@@ -530,10 +530,7 @@ const publishedAtLabel = computed(() => {
 
                         <div class="flex flex-col gap-3">
                             <Field orientation="horizontal">
-                                <Switch
-                                    id="is_home"
-                                    v-model:checked="form.is_home"
-                                />
+                                <Switch id="is_home" v-model="form.is_home" />
                                 <FieldContent>
                                     <FieldLabel for="is_home">
                                         Définir comme page d'accueil

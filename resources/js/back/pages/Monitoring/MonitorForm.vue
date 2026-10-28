@@ -348,7 +348,7 @@ function onSubmit(): void {
                         </Field>
 
                         <Field orientation="horizontal">
-                            <Switch id="active" v-model:checked="form.active" />
+                            <Switch id="active" v-model="form.active" />
                             <FieldContent>
                                 <FieldLabel for="active">
                                     Surveillance active

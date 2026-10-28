@@ -210,9 +210,9 @@ const includes = [
                         >Mensuel</span
                     >
                     <Switch
-                        :checked="annual"
+                        :model-value="annual"
                         aria-label="Périodicité de facturation"
-                        @update:checked="setBilling"
+                        @update:model-value="setBilling"
                     />
                     <span
                         class="text-sm"

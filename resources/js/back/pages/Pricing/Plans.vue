@@ -228,13 +228,15 @@ function onDestroy(plan: PricingPlan): void {
                                         {{ plan.active ? 'Actif' : 'Inactif' }}
                                     </Badge>
                                     <Switch
-                                        :checked="plan.active"
+                                        :model-value="plan.active"
                                         :aria-label="`${plan.active ? 'Désactiver' : 'Activer'} le plan ${plan.name}`"
                                         :disabled="
                                             pendingId !== null &&
                                             pendingId !== plan.id
                                         "
-                                        @update:checked="onToggleActive(plan)"
+                                        @update:model-value="
+                                            onToggleActive(plan)
+                                        "
                                     />
                                 </div>
                             </TableCell>

@@ -110,14 +110,16 @@ function onToggle(module: Module): void {
                                             class="size-4 text-muted-foreground"
                                         />
                                         <Switch
-                                            :checked="module.enabled"
+                                            :model-value="module.enabled"
                                             :disabled="
                                                 !isAdmin ||
                                                 (pendingSlug !== null &&
                                                     pendingSlug !== module.slug)
                                             "
                                             :aria-label="`${module.enabled ? 'Désactiver' : 'Activer'} le module ${module.label}`"
-                                            @update:checked="onToggle(module)"
+                                            @update:model-value="
+                                                onToggle(module)
+                                            "
                                         />
                                     </div>
                                 </TableCell>

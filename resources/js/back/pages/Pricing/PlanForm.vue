@@ -483,10 +483,7 @@ function onSubmit(): void {
                         </div>
 
                         <Field orientation="horizontal">
-                            <Switch
-                                id="popular"
-                                v-model:checked="form.popular"
-                            />
+                            <Switch id="popular" v-model="form.popular" />
                             <FieldContent>
                                 <FieldLabel for="popular">
                                     Mettre en avant ce plan
@@ -499,7 +496,7 @@ function onSubmit(): void {
                         </Field>
 
                         <Field orientation="horizontal">
-                            <Switch id="active" v-model:checked="form.active" />
+                            <Switch id="active" v-model="form.active" />
                             <FieldContent>
                                 <FieldLabel for="active">
                                     Plan actif
