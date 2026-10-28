@@ -3,6 +3,7 @@ export * from './auth';
 export * from './connector';
 export * from './landing';
 export * from './module';
+export * from './monitoring';
 export * from './navigation';
 export * from './page';
 export * from './pricing';

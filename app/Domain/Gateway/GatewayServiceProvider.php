@@ -2,6 +2,7 @@
 
 namespace App\Domain\Gateway;
 
+use App\Domain\Gateway\Http\Controllers\Api\HealthController;
 use App\Domain\Gateway\Http\Middleware\AuthenticateApiKey;
 use App\Domain\Gateway\Models\ApiKey;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -67,5 +68,15 @@ class GatewayServiceProvider extends ServiceProvider
             ->prefix('api/v1')
             ->name('api.')
             ->group(__DIR__.'/routes/api.php');
+
+        // The internal health probe: no API key, no throttling, but still
+        // under the module kill switch (see HealthController).
+        Route::middleware(['api', 'module:gateway'])
+            ->withoutMiddleware('throttle:api')
+            ->prefix('api/v1')
+            ->name('api.')
+            ->group(function (): void {
+                Route::get('health', HealthController::class)->name('health');
+            });
     }
 }

@@ -10,6 +10,7 @@ import { index as connectorsIndex } from '@/routes/admin/connectors';
 import { index as gatewayKeysIndex } from '@/routes/admin/gateway/keys';
 import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
+import { dashboard as monitoringDashboard } from '@/routes/admin/monitoring';
 import { index as pricingPlansIndex } from '@/routes/admin/pricing/plans';
 import { index as webhooksEndpointsIndex } from '@/routes/admin/webhooks/endpoints';
 import { edit as profileEdit } from '@/routes/admin/profile';
@@ -93,6 +94,12 @@ const webhooksEnabled = computed(
             ?.enabled ?? false,
 );
 
+const monitoringEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'monitoring')
+            ?.enabled ?? false,
+);
+
 /* Liens des modules metier reellement actives : une entree sans lien reste
    grise (« a venir »). Pricing pointe vers la liste des plans ; les tables
    de prix sont atteignables depuis cet ecran. La gestion des cles Gateway
@@ -122,17 +129,23 @@ const enabledModuleHrefs = computed<Record<string, string>>(() => {
         hrefs.webhooks = webhooksEndpointsIndex.url();
     }
 
+    if (monitoringEnabled.value && user.value?.role === 'admin') {
+        hrefs.monitoring = monitoringDashboard.url();
+    }
+
     return hrefs;
 });
 
 const moduleNav = computed(() =>
     moduleCatalog
-        /* Les entrees Gateway et Webhooks ne sont pas affichees du tout
-           aux non-admins : leurs ecrans d'administration leur sont
-           interdits cote serveur. */
+        /* Les entrees Gateway, Webhooks et Monitoring ne sont pas affichees
+           du tout aux non-admins : leurs ecrans d'administration leur
+           sont interdits cote serveur. */
         .filter(
             (module) =>
-                (module.slug !== 'gateway' && module.slug !== 'webhooks') ||
+                (module.slug !== 'gateway' &&
+                    module.slug !== 'webhooks' &&
+                    module.slug !== 'monitoring') ||
                 user.value?.role === 'admin',
         )
         .map((module) => ({
@@ -163,6 +176,10 @@ const sectionTitle = computed(() => {
 
     if (page.url.startsWith('/admin/webhooks')) {
         return 'Webhooks';
+    }
+
+    if (page.url.startsWith('/admin/monitoring')) {
+        return 'Monitoring';
     }
 
     if (page.url.startsWith('/admin/modules')) {

@@ -12,6 +12,14 @@ import type {
 } from './landing';
 import type { Module, SharedModule } from './module';
 import type {
+    CheckItem,
+    MonitorCard,
+    MonitorConnectorOption,
+    MonitorForm,
+    MonitorListItem,
+    MonitoringHistoryFilters,
+} from './monitoring';
+import type {
     PricingPlan,
     PricingPlanOption,
     PricingShow,
@@ -143,6 +151,35 @@ export type BackWebhooksDeliveriesPageProps = AppSharedProps & {
 /** Props de la page `back/Webhooks/Delivery` (détail d'une delivery). */
 export type BackWebhooksDeliveryPageProps = AppSharedProps & {
     delivery: WebhookDeliveryDetail;
+};
+
+/**
+ * Props de la page `back/Monitoring/Dashboard` (état courant des
+ * moniteurs, alertes actives et liste des connecteurs monitorables).
+ */
+export type BackMonitoringDashboardPageProps = AppSharedProps & {
+    monitors: MonitorCard[];
+    connectors: MonitorConnectorOption[];
+};
+
+/** Props de la page `back/Monitoring/Monitors` (gestion des moniteurs). */
+export type BackMonitoringMonitorsPageProps = AppSharedProps & {
+    monitors: MonitorListItem[];
+};
+
+/** Props de la page `back/Monitoring/MonitorForm` (création et édition). */
+export type BackMonitoringMonitorFormPageProps = AppSharedProps & {
+    monitor?: MonitorForm;
+    connectors: MonitorConnectorOption[];
+};
+
+/**
+ * Props de la page `back/Monitoring/History` (journal des contrôles,
+ * filtrable par type, statut et période).
+ */
+export type BackMonitoringHistoryPageProps = AppSharedProps & {
+    checks: CheckItem[];
+    filters: MonitoringHistoryFilters;
 };
 
 /** Props de la page `back/Login` (écran de connexion Fortify). */

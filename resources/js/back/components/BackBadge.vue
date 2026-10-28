@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// Badge d'etat de la charte back-office : success (actif), muted (inactif,
-// expiree) ou danger (revoquee).
+// Badge d'etat de la charte back-office : success (actif, operationnel),
+// warning (degrade), muted (inactif, jamais controle) ou danger (echec,
+// revoquee).
 withDefaults(
     defineProps<{
-        variant?: 'success' | 'muted' | 'danger';
+        variant?: 'success' | 'warning' | 'muted' | 'danger';
     }>(),
     { variant: 'muted' },
 );
