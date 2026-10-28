@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pricing_tables', function (Blueprint $table): void {
             $table->id();
-            $table->string('slug')->unique();
+            $table->string('slug', 191)->unique();
             $table->string('title');
             $table->string('subtitle');
             $table->json('faq');

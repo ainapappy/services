@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('modules', function (Blueprint $table) {
             $table->id();
-            $table->string('slug')->unique();
+            $table->string('slug', 191)->unique();
             $table->boolean('enabled')->default(false);
             $table->timestamps();
         });

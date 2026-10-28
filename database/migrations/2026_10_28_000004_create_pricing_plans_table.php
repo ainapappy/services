@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('pricing_plans', function (Blueprint $table): void {
             $table->id();
-            $table->string('slug')->unique();
+            $table->string('slug', 191)->unique();
             $table->string('name');
             $table->string('tagline');
             $table->unsignedInteger('price_monthly');

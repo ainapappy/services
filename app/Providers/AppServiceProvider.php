@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -52,6 +53,11 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Shared-hosting MariaDB servers still defaulting to MyISAM/Aria
+        // cap index keys at 1000 bytes: 255 utf8mb4 chars = 1020 bytes,
+        // 191 = 764 bytes. Migrations pin their indexed columns to 191.
+        Schema::defaultStringLength(191);
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
