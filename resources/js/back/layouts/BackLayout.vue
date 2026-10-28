@@ -1,9 +1,11 @@
 <script setup lang="ts">
-// Coquille back-office : sidebar sombre + en-tete avec menu utilisateur.
-// Aucun import hors vue / @inertiajs / types / back.css : les arbres
-// front/ et back/ restent etanches.
+// Coquille back-office shadcn : sidebar collapsible (kit ui/sidebar, etat
+// persiste en cookie, Sheet en mobile), header avec breadcrumb + bascule
+// de theme + menu utilisateur, toaster des flashs Inertia.
+// Aucun import hors vue / @inertiajs / @lucide / types / ui / composables
+// / routes : les arbres front/ et back/ restent etanches.
 import { Link, router, usePage } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, ref, type Component } from 'vue';
 import type { AppSharedProps } from '@/types';
 import { dashboard } from '@/routes/admin';
 import { index as connectorsIndex } from '@/routes/admin/connectors';
@@ -15,7 +17,57 @@ import { index as pricingPlansIndex } from '@/routes/admin/pricing/plans';
 import { index as webhooksEndpointsIndex } from '@/routes/admin/webhooks/endpoints';
 import { edit as profileEdit } from '@/routes/admin/profile';
 import { logout } from '@/routes';
-import '../../../css/back.css';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarInset,
+    SidebarMenu,
+    SidebarMenuBadge,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarRail,
+    SidebarTrigger,
+} from '@/components/ui/sidebar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
+import { Toaster } from '@/components/ui/sonner';
+import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import {
+    ActivityIcon,
+    BoxesIcon,
+    CableIcon,
+    CircleUserRoundIcon,
+    CreditCardIcon,
+    KeyRoundIcon,
+    LayoutDashboardIcon,
+    LayoutTemplateIcon,
+    LogOutIcon,
+    WebhookIcon,
+} from '@lucide/vue';
+import ThemeToggle from '../components/ThemeToggle.vue';
 
 const page = usePage<AppSharedProps>();
 const user = computed(() => page.props.auth.user);
@@ -38,7 +90,12 @@ function initials(name: string): string {
    reservee aux administrateurs. */
 const mainLinks = computed(() => {
     const links = [
-        { label: 'Tableau de bord', href: dashboard.url(), base: '/admin' },
+        {
+            label: 'Tableau de bord',
+            href: dashboard.url(),
+            base: '/admin',
+            icon: LayoutDashboardIcon,
+        },
     ];
 
     if (user.value?.role === 'admin') {
@@ -46,22 +103,28 @@ const mainLinks = computed(() => {
             label: 'Modules',
             href: modulesIndex.url(),
             base: '/admin/modules',
+            icon: BoxesIcon,
         });
     }
 
     return links;
 });
 
-/* Catalogue des modules metier, dans l'ordre du registre. Un module
-   active expose un vrai lien vers son ecran d'administration ; les
-   autres restent grises avec un repere « a venir ». */
-const moduleCatalog = [
-    { slug: 'landing', label: 'Landing' },
-    { slug: 'pricing', label: 'Pricing' },
-    { slug: 'gateway', label: 'Gateway' },
-    { slug: 'connectors', label: 'Connectors' },
-    { slug: 'webhooks', label: 'Webhooks' },
-    { slug: 'monitoring', label: 'Monitoring' },
+/* Catalogue des modules metier, dans l'ordre du registre, avec leur
+   icone. Un module active expose un vrai lien vers son ecran
+   d'administration ; les autres restent grisés avec un repere « a
+   venir ». */
+const moduleCatalog: Array<{
+    slug: string;
+    label: string;
+    icon: Component;
+}> = [
+    { slug: 'landing', label: 'Landing', icon: LayoutTemplateIcon },
+    { slug: 'pricing', label: 'Pricing', icon: CreditCardIcon },
+    { slug: 'gateway', label: 'Gateway', icon: KeyRoundIcon },
+    { slug: 'connectors', label: 'Connectors', icon: CableIcon },
+    { slug: 'webhooks', label: 'Webhooks', icon: WebhookIcon },
+    { slug: 'monitoring', label: 'Monitoring', icon: ActivityIcon },
 ];
 
 const landingEnabled = computed(
@@ -193,43 +256,8 @@ const sectionTitle = computed(() => {
     return 'Tableau de bord';
 });
 
-/* Menu utilisateur : fermeture au clic exterieur, Echap ou navigation. */
-const menuOpen = ref(false);
-const menuRoot = ref<HTMLElement | null>(null);
+/* Logout : spinner le temps du POST, puis redirection cote serveur. */
 const loggingOut = ref(false);
-
-function onDocumentClick(event: MouseEvent): void {
-    if (
-        menuOpen.value &&
-        menuRoot.value &&
-        !menuRoot.value.contains(event.target as Node)
-    ) {
-        menuOpen.value = false;
-    }
-}
-
-function onKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape') {
-        menuOpen.value = false;
-    }
-}
-
-onMounted(() => {
-    document.addEventListener('click', onDocumentClick);
-    document.addEventListener('keydown', onKeydown);
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener('click', onDocumentClick);
-    document.removeEventListener('keydown', onKeydown);
-});
-
-watch(
-    () => page.url,
-    () => {
-        menuOpen.value = false;
-    },
-);
 
 function onLogout(): void {
     if (loggingOut.value) {
@@ -250,155 +278,235 @@ function onLogout(): void {
 </script>
 
 <template>
-    <div class="flex min-h-screen">
-        <aside class="flex w-60 shrink-0 flex-col bg-[var(--color-ink)]">
-            <div class="px-6 pt-6 pb-4">
-                <p class="text-sm font-semibold tracking-wide text-white">
-                    Services
-                </p>
-                <p class="mt-0.5 text-xs text-white/40">Administration</p>
-            </div>
+    <SidebarProvider>
+        <Toaster position="bottom-right" />
 
-            <nav
-                class="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-2"
-                aria-label="Navigation principale"
-            >
-                <div class="flex flex-col gap-1">
-                    <p class="back-nav-label">Général</p>
-                    <Link
-                        v-for="link in mainLinks"
-                        :key="link.href"
-                        :href="link.href"
-                        class="back-nav-item"
-                        :aria-current="isActive(link.base) ? 'page' : undefined"
-                    >
-                        {{ link.label }}
-                    </Link>
-                </div>
-
-                <div class="flex flex-col gap-1">
-                    <p class="back-nav-label">Modules</p>
-                    <template v-for="module in moduleNav" :key="module.slug">
-                        <Link
-                            v-if="module.href !== null"
-                            :href="module.href"
-                            class="back-nav-item"
-                            :aria-current="
-                                isActive(`/admin/${module.slug}`)
-                                    ? 'page'
-                                    : undefined
-                            "
+        <Sidebar collapsible="icon">
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            as-child
+                            size="lg"
+                            :tooltip="'Tableau de bord'"
                         >
-                            {{ module.label }}
-                        </Link>
-                        <span
-                            v-else
-                            class="back-nav-item back-nav-item--soon flex items-center justify-between"
-                            aria-disabled="true"
-                        >
-                            {{ module.label }}
-                            <span class="back-soon-chip">À venir</span>
-                        </span>
-                    </template>
-                </div>
-            </nav>
+                            <Link :href="dashboard.url()">
+                                <span
+                                    class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+                                >
+                                    <AppLogoIcon class="size-5" />
+                                </span>
+                                <span
+                                    class="flex flex-col leading-tight group-data-[collapsible=icon]:hidden"
+                                >
+                                    <span class="text-sm font-semibold">
+                                        Services
+                                    </span>
+                                    <span class="text-xs text-muted-foreground">
+                                        Administration
+                                    </span>
+                                </span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
 
-            <p class="px-6 py-4 text-xs text-white/40">
-                Back-office Services
-            </p>
-        </aside>
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupLabel>Général</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem
+                                v-for="link in mainLinks"
+                                :key="link.href"
+                            >
+                                <SidebarMenuButton
+                                    as-child
+                                    :is-active="isActive(link.base)"
+                                    :tooltip="link.label"
+                                >
+                                    <Link
+                                        :href="link.href"
+                                        :aria-current="
+                                            isActive(link.base)
+                                                ? 'page'
+                                                : undefined
+                                        "
+                                    >
+                                        <component :is="link.icon" />
+                                        <span>{{ link.label }}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
 
-        <div class="flex min-w-0 flex-1 flex-col">
-            <header
-                class="flex h-14 shrink-0 items-center justify-between border-b border-[rgba(23,23,28,0.09)] bg-[var(--color-surface)] px-6"
-            >
+                <SidebarGroup>
+                    <SidebarGroupLabel>Modules</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <SidebarMenuItem
+                                v-for="module in moduleNav"
+                                :key="module.slug"
+                            >
+                                <SidebarMenuButton
+                                    v-if="module.href !== null"
+                                    as-child
+                                    :is-active="
+                                        isActive(`/admin/${module.slug}`)
+                                    "
+                                    :tooltip="module.label"
+                                >
+                                    <Link
+                                        :href="module.href"
+                                        :aria-current="
+                                            isActive(`/admin/${module.slug}`)
+                                                ? 'page'
+                                                : undefined
+                                        "
+                                    >
+                                        <component :is="module.icon" />
+                                        <span>{{ module.label }}</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                                <SidebarMenuButton
+                                    v-else
+                                    disabled
+                                    :tooltip="`${module.label} — à venir`"
+                                >
+                                    <component :is="module.icon" />
+                                    <span>{{ module.label }}</span>
+                                    <SidebarMenuBadge
+                                        class="pointer-events-none"
+                                    >
+                                        À venir
+                                    </SidebarMenuBadge>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
+
+            <SidebarFooter>
                 <p
-                    class="text-sm font-semibold tracking-tight text-[var(--color-ink)]"
+                    class="px-2 pb-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden"
                 >
-                    {{ sectionTitle }}
+                    Back-office Services
                 </p>
+            </SidebarFooter>
 
-                <div v-if="user" ref="menuRoot" class="relative">
-                    <button
-                        type="button"
-                        class="back-menu-trigger"
-                        aria-haspopup="menu"
-                        :aria-expanded="menuOpen"
-                        @click="menuOpen = !menuOpen"
-                    >
-                        <span
-                            class="flex size-7 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-accent)_94%,#000)] text-xs font-semibold text-white"
-                            aria-hidden="true"
-                        >
-                            {{ initials(user.name) }}
-                        </span>
-                        <span class="flex flex-col items-start leading-tight">
-                            <span class="text-sm text-[var(--color-ink)]">{{
-                                user.name
-                            }}</span>
-                            <span class="text-xs text-[var(--color-muted)]">{{
-                                roleLabels[user.role]
-                            }}</span>
-                        </span>
-                    </button>
+            <SidebarRail />
+        </Sidebar>
 
-                    <div
-                        v-if="menuOpen"
-                        class="absolute right-0 z-10 mt-2 w-60 rounded-lg border border-[rgba(23,23,28,0.09)] bg-[var(--color-surface)] p-1.5 shadow-lg"
-                        role="menu"
-                        aria-label="Menu utilisateur"
-                    >
-                        <div class="px-3 py-2">
-                            <p
-                                class="truncate text-sm font-medium text-[var(--color-ink)]"
+        <SidebarInset>
+            <header
+                class="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4"
+            >
+                <SidebarTrigger class="-ml-1" />
+                <Separator
+                    orientation="vertical"
+                    class="mr-2 data-[orientation=vertical]:h-4"
+                />
+
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <slot name="breadcrumb">
+                            <template v-if="page.url === '/admin'">
+                                <BreadcrumbItem>
+                                    <BreadcrumbPage>
+                                        Tableau de bord
+                                    </BreadcrumbPage>
+                                </BreadcrumbItem>
+                            </template>
+                            <template v-else>
+                                <BreadcrumbItem>
+                                    <BreadcrumbLink as-child>
+                                        <Link :href="dashboard.url()">
+                                            Administration
+                                        </Link>
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator />
+                                <BreadcrumbItem>
+                                    <BreadcrumbPage>
+                                        {{ sectionTitle }}
+                                    </BreadcrumbPage>
+                                </BreadcrumbItem>
+                            </template>
+                        </slot>
+                    </BreadcrumbList>
+                </Breadcrumb>
+
+                <div v-if="user" class="ml-auto flex items-center gap-1.5">
+                    <ThemeToggle />
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger as-child>
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-md p-1.5 outline-hidden transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-haspopup="menu"
                             >
-                                {{ user.name }}
-                            </p>
-                            <p
-                                class="truncate text-xs text-[var(--color-muted)]"
+                                <Avatar class="size-7">
+                                    <AvatarFallback
+                                        class="bg-primary text-xs font-semibold text-primary-foreground"
+                                    >
+                                        {{ initials(user.name) }}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span
+                                    class="hidden flex-col items-start leading-tight sm:flex"
+                                >
+                                    <span class="text-sm font-medium">
+                                        {{ user.name }}
+                                    </span>
+                                    <span class="text-xs text-muted-foreground">
+                                        {{ roleLabels[user.role] }}
+                                    </span>
+                                </span>
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-60">
+                            <DropdownMenuLabel class="flex flex-col">
+                                <span class="truncate font-medium">
+                                    {{ user.name }}
+                                </span>
+                                <span
+                                    class="truncate text-xs font-normal text-muted-foreground"
+                                >
+                                    {{ user.email }}
+                                </span>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem as-child>
+                                <Link :href="profileEdit.url()">
+                                    <CircleUserRoundIcon />
+                                    Mon profil
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                variant="destructive"
+                                :disabled="loggingOut"
+                                @select="onLogout"
                             >
-                                {{ user.email }}
-                            </p>
-                            <span class="back-badge back-badge--muted mt-2">{{
-                                roleLabels[user.role]
-                            }}</span>
-                        </div>
-
-                        <div
-                            class="my-1 border-t border-[rgba(23,23,28,0.09)]"
-                        />
-
-                        <Link
-                            :href="profileEdit.url()"
-                            class="back-menu-item"
-                            role="menuitem"
-                        >
-                            Mon profil
-                        </Link>
-
-                        <button
-                            type="button"
-                            class="back-menu-item back-menu-item--danger"
-                            role="menuitem"
-                            :disabled="loggingOut"
-                            @click="onLogout"
-                        >
-                            <span
-                                v-if="loggingOut"
-                                class="back-spinner"
-                                aria-hidden="true"
-                            />
-                            Se déconnecter
-                        </button>
-                    </div>
+                                <Spinner v-if="loggingOut" class="size-4" />
+                                <LogOutIcon v-else />
+                                Se déconnecter
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </header>
 
-            <main class="flex-1 px-6 py-8">
+            <main class="flex-1 px-4 py-6 md:px-6 lg:px-8">
                 <div class="mx-auto w-full max-w-5xl">
                     <slot />
                 </div>
             </main>
-        </div>
-    </div>
+        </SidebarInset>
+    </SidebarProvider>
 </template>

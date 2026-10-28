@@ -156,7 +156,7 @@ const title = computed(() => {
 <template>
     <svg
         v-if="points.length > 0"
-        class="back-spark"
+        class="block h-8 w-full"
         :viewBox="`0 0 ${WIDTH} ${HEIGHT}`"
         preserveAspectRatio="none"
         aria-hidden="true"
@@ -168,7 +168,7 @@ const title = computed(() => {
         <path
             v-for="segment in visibleSegments"
             :key="`area-${segment.key}`"
-            class="back-spark-area"
+            class="fill-primary/15"
             :d="segment.areaPath"
         />
 
@@ -176,7 +176,7 @@ const title = computed(() => {
         <polyline
             v-for="segment in visibleSegments"
             :key="`line-${segment.key}`"
-            class="back-spark-line"
+            class="fill-none stroke-primary stroke-2"
             :points="segment.linePoints"
             vector-effect="non-scaling-stroke"
         />
@@ -185,7 +185,8 @@ const title = computed(() => {
         <line
             v-for="segment in singleSegments"
             :key="`mark-${segment.key}`"
-            class="back-spark-dot"
+            class="stroke-primary stroke-2"
+            stroke-linecap="round"
             :x1="segment.x"
             :y1="(HEIGHT / 2 - 3).toFixed(2)"
             :x2="segment.x"
@@ -197,7 +198,8 @@ const title = computed(() => {
         <line
             v-for="(x, outageIndex) in outageMarks"
             :key="`outage-${outageIndex}`"
-            class="back-spark-outage"
+            class="stroke-destructive stroke-2"
+            stroke-linecap="round"
             :x1="x"
             :y1="(BASE_Y - 4).toFixed(2)"
             :x2="x"
