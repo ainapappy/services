@@ -1,11 +1,13 @@
 <script setup lang="ts">
-// Coquille canonique de la vitrine : wrapper .dark (la vitrine est TOUJOURS
-// sombre, quelle que soit la preference du systeme), header sticky et footer
-// canoniques. SEUL importeur de front.css (les effets front). Les liens
-// reprennent les cibles des anciennes navs de pages, via les routes
-// Wayfinder (jamais d'URL en dur).
+// Coquille canonique de la vitrine : elle suit le theme global (classe .dark
+// sur <html>, posee par le script anti-flash du blade et useAppearance — la
+// bascule clair/sombre du header est front/components/ThemeToggle.vue),
+// header sticky et footer canoniques. SEUL importeur de front.css (les effets
+// front). Les liens reprennent les cibles des anciennes navs de pages, via
+// les routes Wayfinder (jamais d'URL en dur).
 import '../../../css/front.css';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import ThemeToggle from '@/front/components/ThemeToggle.vue';
 import { Button } from '@/components/ui/button';
 import { home, pricing } from '@/routes';
 
@@ -27,10 +29,10 @@ const year = new Date().getFullYear();
 
 <template>
     <!-- isolate : cree le stacking context qui laisse les halos -z-10 se
-         peindre au-dessus du fond sombre du wrapper. overflow-x-clip :
-         masque les halos debordants sans casser le header sticky. -->
+         peindre au-dessus du fond du wrapper. overflow-x-clip : masque les
+         halos debordants sans casser le header sticky. -->
     <div
-        class="dark isolate flex min-h-svh flex-col overflow-x-clip bg-background font-sans text-foreground"
+        class="isolate flex min-h-svh flex-col overflow-x-clip bg-background font-sans text-foreground"
     >
         <header
             class="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur"
@@ -68,9 +70,12 @@ const year = new Date().getFullYear();
                             >Tarifs</a
                         >
                     </nav>
-                    <Button as-child size="sm">
-                        <a :href="props.ctaHref">Commencer</a>
-                    </Button>
+                    <div class="flex items-center gap-1.5">
+                        <ThemeToggle />
+                        <Button as-child size="sm">
+                            <a :href="props.ctaHref">Commencer</a>
+                        </Button>
+                    </div>
                 </div>
             </slot>
         </header>

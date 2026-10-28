@@ -1,31 +1,33 @@
-/* Charte FRONT-OFFICE (vitrine, toujours sombre) - EFFETS UNIQUEMENT.
-   Les tokens (Tailwind + shadcn, variant .dark) vivent dans app.css ; ce
-   fichier ne porte plus que les effets propres a la vitrine : halos -z-10,
-   console temps reel, marquee, bordure rotative du plan populaire,
-   revelation au scroll (directive v-reveal), swap des prix, 404 et
-   reduced-motion. Il est importe par FrontLayout.vue, et par lui seul.
+/* Charte FRONT-OFFICE (vitrine, suit le theme global clair/sombre) - EFFETS
+   UNIQUEMENT. Les tokens (Tailwind + shadcn, variant .dark) vivent dans
+   app.css ; ce fichier ne porte plus que les effets propres a la vitrine :
+   halos -z-10, console temps reel, marquee, bordure rotative du plan
+   populaire, revelation au scroll (directive v-reveal), swap des prix, 404
+   et reduced-motion. Il est importe par FrontLayout.vue, et par lui seul.
    Les regles restent hors layer pour ne pas etre ecrasees par les
-   utilitaires Tailwind. */
+   utilitaires Tailwind. Les couleurs accordees au theme sombre ont une
+   variante claire AA en fin de fichier. */
 
-/* La vitrine est toujours sombre : le fond est porte par html (debordements
-   et overscroll) pendant que le wrapper .dark de la coquille porte le theme
-   (meme valeur que --background du variant .dark). */
+/* Le fond de page est porte par html (debordements et overscroll) : il suit
+   le theme global via --background, pilote par la classe .dark de <html>
+   (moteur commun au back-office : useAppearance + anti-flash du blade). */
 html {
-    background-color: oklch(0.141 0.005 285.823);
+    background-color: var(--background);
     scroll-behavior: smooth;
 }
 
-/* Texte accent sur surfaces sombres : l'indigo 300 passe largement AA sur
-   les surfaces de la console, la ou --primary / --ring plafonnent sous
-   4.5:1 en petit corps. Reserve aux chips de code des rows. */
+/* Texte accent des chips de code des rows : indigo 300 en sombre (AA large
+   sur les surfaces de la console, la ou --primary / --ring plafonnent sous
+   4.5:1 en petit corps) ; la variante claire AA est dans le bloc dedie en
+   fin de fichier. */
 :root {
     --front-accent-text: #a5b4fc;
 }
 
 /* --------------------------------------------------------------------------
    Halos animes en -z-10 + grille radiale du heros
-   (le wrapper .dark de la coquille est isole : les halos -z-10 se peignent
-   au-dessus de son fond, sous le contenu)
+   (la coquille est isolee : les halos -z-10 se peignent au-dessus de son
+   fond, sous le contenu)
    -------------------------------------------------------------------------- */
 
 .front-glow {
@@ -531,6 +533,29 @@ html {
     font-weight: 750;
     letter-spacing: -0.04em;
     line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Variante claire (html sans .dark) : les valeurs accordees au theme sombre
+   passent sur des equivalents AA sur fond clair. Scoping :root:not(.dark) +
+   classes propres a ce fichier : sans effet residuel sur le back-office si
+   le bundle front reste charge apres une navigation SPA.
+   -------------------------------------------------------------------------- */
+
+:root:not(.dark) {
+    --front-accent-text: #4338ca;
+}
+
+:root:not(.dark) .badge-live {
+    color: #047857;
+}
+
+:root:not(.dark) .front-console-rows .ok {
+    color: #047857;
+}
+
+:root:not(.dark) .front-console-rows .warn {
+    color: #92400e;
 }
 
 /* --------------------------------------------------------------------------
