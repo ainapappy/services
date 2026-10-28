@@ -1,6 +1,11 @@
 import type { User } from './auth';
 import type { ApiKey } from './apiKey';
 import type {
+    ConnectorForm,
+    ConnectorListItem,
+    ConnectorTestResult,
+} from './connector';
+import type {
     LandingPageForm,
     LandingPageListItem,
     LandingShow,
@@ -38,6 +43,22 @@ export type BackLandingIndexPageProps = AppSharedProps & {
 /** Props de la page `back/Landing/Form` (création et édition). */
 export type BackLandingFormPageProps = AppSharedProps & {
     landingPage?: LandingPageForm;
+};
+
+/**
+ * Props de la page `back/Connectors/Index` (liste des connecteurs).
+ * Le résultat du dernier test de connexion transite exclusivement par le
+ * flash de session partagé sous `flash.testResult` : consommé à l'écran,
+ * il n'existe dans aucun autre type.
+ */
+export type BackConnectorsIndexPageProps = AppSharedProps & {
+    connectors: ConnectorListItem[];
+    flash?: { testResult?: ConnectorTestResult | null };
+};
+
+/** Props de la page `back/Connectors/Form` (création et édition). */
+export type BackConnectorsFormPageProps = AppSharedProps & {
+    connector?: ConnectorForm;
 };
 
 /** Props de la page `front/Pricing/Show` (page tarifs publique). */

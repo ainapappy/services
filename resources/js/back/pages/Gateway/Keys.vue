@@ -31,6 +31,8 @@ const abilityDescriptions: Record<string, string> = {
     'services:read':
         'Lire les modules activés de la plateforme (GET /api/v1/services).',
     'landings:read': 'Lire les landing pages publiées (GET /api/v1/landings).',
+    'connectors:read':
+        'Lire les connecteurs enregistrés : nom, type et statut (GET /api/v1/connectors).',
 };
 
 /* ------------------------------------------------------------------ */

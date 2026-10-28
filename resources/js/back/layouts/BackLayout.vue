@@ -6,6 +6,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { AppSharedProps } from '@/types';
 import { dashboard } from '@/routes/admin';
+import { index as connectorsIndex } from '@/routes/admin/connectors';
 import { index as gatewayKeysIndex } from '@/routes/admin/gateway/keys';
 import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
@@ -79,10 +80,17 @@ const gatewayEnabled = computed(
             ?.enabled ?? false,
 );
 
+const connectorsEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'connectors')
+            ?.enabled ?? false,
+);
+
 /* Liens des modules metier reellement actives : une entree sans lien reste
    grise (« a venir »). Pricing pointe vers la liste des plans ; les tables
    de prix sont atteignables depuis cet ecran. La gestion des cles Gateway
-   est reservee aux administrateurs (403 pour les autres roles). */
+   est reservee aux administrateurs (403 pour les autres roles), tandis que
+   le CRUD Connectors est ouvert aux administrateurs ET aux editeurs. */
 const enabledModuleHrefs = computed<Record<string, string>>(() => {
     const hrefs: Record<string, string> = {};
 
@@ -96,6 +104,10 @@ const enabledModuleHrefs = computed<Record<string, string>>(() => {
 
     if (gatewayEnabled.value && user.value?.role === 'admin') {
         hrefs.gateway = gatewayKeysIndex.url();
+    }
+
+    if (connectorsEnabled.value) {
+        hrefs.connectors = connectorsIndex.url();
     }
 
     return hrefs;
@@ -129,6 +141,10 @@ const sectionTitle = computed(() => {
 
     if (page.url.startsWith('/admin/gateway')) {
         return 'Gateway';
+    }
+
+    if (page.url.startsWith('/admin/connectors')) {
+        return 'Connectors';
     }
 
     if (page.url.startsWith('/admin/modules')) {

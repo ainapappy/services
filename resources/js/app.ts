@@ -9,6 +9,8 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 // Résolution Inertia par namespace : les pages du starter vivent sous
 // resources/js/pages, la vitrine sous resources/js/front/pages et
 // l'administration sous resources/js/back/pages (arbres étanches).
+// La regle front|back est la meme que $pageEntry dans app.blade.php :
+// le prefixe du composant designe l'arbre, pas un sous-dossier de pages.
 const pages = import.meta.glob<{ default: DefineComponent }>([
     './pages/**/*.vue',
     './front/pages/**/*.vue',
@@ -18,23 +20,17 @@ const pages = import.meta.glob<{ default: DefineComponent }>([
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     resolve: async (name) => {
-        const candidates = [
-            `./pages/${name}.vue`,
-            `./front/pages/${name}.vue`,
-            `./back/pages/${name}.vue`,
-        ];
+        const path = /^(front|back)\//.test(name)
+            ? `./${name.replace(/^([^/]+)\//, '$1/pages/')}.vue`
+            : `./pages/${name}.vue`;
 
-        for (const path of candidates) {
-            const load = pages[path];
+        const load = pages[path];
 
-            if (!load) {
-                continue;
-            }
-
-            return (await load()).default;
+        if (!load) {
+            throw new Error(`Page not found: ${name}`);
         }
 
-        throw new Error(`Page not found: ${name}`);
+        return (await load()).default;
     },
     layout: (name) => {
         switch (true) {

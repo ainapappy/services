@@ -1,9 +1,10 @@
 <script setup lang="ts">
-// Bandeau de statut (flash, information, avertissement) de la charte
-// back-office. role="status" : annonce poliment par les lecteurs d'ecran.
+// Bandeau de statut (flash, information, avertissement, echec) de la
+// charte back-office. role="status" : annonce poliment par les lecteurs
+// d'ecran.
 withDefaults(
     defineProps<{
-        tone?: 'info' | 'success' | 'warning';
+        tone?: 'info' | 'success' | 'warning' | 'danger';
     }>(),
     { tone: 'info' },
 );

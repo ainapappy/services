@@ -8,7 +8,11 @@
  */
 
 /** Abilities reconnues par le middleware `api.key`, dans l'ordre du registre. */
-export const API_KEY_ABILITIES = ['services:read', 'landings:read'] as const;
+export const API_KEY_ABILITIES = [
+    'services:read',
+    'landings:read',
+    'connectors:read',
+] as const;
 
 /** Ability reconnue par le domaine Gateway. */
 export type ApiKeyAbility = (typeof API_KEY_ABILITIES)[number];

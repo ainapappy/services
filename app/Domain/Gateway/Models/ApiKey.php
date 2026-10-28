@@ -61,6 +61,11 @@ class ApiKey extends Model
     final public const ABILITY_LANDINGS_READ = 'landings:read';
 
     /**
+     * Ability granting read access to the configured connectors.
+     */
+    final public const ABILITY_CONNECTORS_READ = 'connectors:read';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>

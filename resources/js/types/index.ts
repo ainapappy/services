@@ -1,5 +1,6 @@
 export * from './apiKey';
 export * from './auth';
+export * from './connector';
 export * from './landing';
 export * from './module';
 export * from './navigation';

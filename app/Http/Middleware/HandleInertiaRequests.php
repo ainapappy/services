@@ -59,6 +59,10 @@ class HandleInertiaRequests extends Middleware
             // gone from the session.
             'flash' => [
                 'secret' => fn (): ?string => $request->session()->get('secret'),
+                // Flashed once by the Connectors connection test: the
+                // status, the latency and a safe error message. Never
+                // the credentials.
+                'testResult' => fn (): ?array => $request->session()->get('testResult'),
             ],
         ];
     }
