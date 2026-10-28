@@ -1,63 +1,55 @@
 <script setup lang="ts">
 // Page 404 du back-office : autonome et centree, volontairement hors
 // coquille (rendue par exception, sans les props partagees auth/modules de
-// BackLayout). Charte back distincte de la vitrine : back.css, classes
-// back-*, aucun import hors arbre back/ et routes wayfinder.
+// BackLayout). Tokens app.css uniquement (bg-background/text-foreground) :
+// ni back.css, ni classes back-*, ni composant back/.
+import { Link } from '@inertiajs/vue3';
 import { home } from '@/routes';
 import { dashboard } from '@/routes/admin';
-import '../../../css/back.css';
+import { Button } from '@/components/ui/button';
 </script>
 
 <template>
-    <div class="flex min-h-svh flex-col items-center justify-center px-4 py-10">
+    <main
+        class="flex min-h-svh flex-col items-center justify-center bg-background px-4 py-10 text-foreground"
+    >
         <div
             class="flex w-full max-w-md flex-col items-center gap-6 text-center"
         >
-            <p
-                class="text-sm font-semibold tracking-tight text-[var(--color-ink)]"
-            >
+            <p class="text-sm font-semibold tracking-tight">
                 Services
-                <span class="font-normal text-[var(--color-muted)]">
+                <span class="font-normal text-muted-foreground">
                     · Back-office
                 </span>
             </p>
 
-            <div
-                class="back-card flex w-full flex-col items-center gap-5 px-6 py-10 sm:px-8"
+            <!-- Grand 404 en degrade : decoratif, l'information portee par
+                 le h1 qui suit. -->
+            <p
+                class="bg-gradient-to-r from-primary to-violet-500 bg-clip-text text-7xl font-semibold tracking-tight text-transparent tabular-nums"
+                aria-hidden="true"
             >
-                <!-- Grand 404 : texte large (48px+), seuil AA « grand texte »
-                     (3:1) ; l'accent brut passe largement (4.47:1). -->
-                <p
-                    class="font-mono text-5xl font-semibold tracking-tight text-[var(--color-accent)]"
-                    aria-hidden="true"
-                >
-                    404
+                404
+            </p>
+
+            <div class="flex flex-col gap-2">
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    Page introuvable
+                </h1>
+                <p class="text-sm text-muted-foreground">
+                    Cette adresse n'existe pas ou n'existe plus : le lien est
+                    peut-être obsolète ou l'URL mal saisie.
                 </p>
+            </div>
 
-                <div class="flex flex-col gap-2">
-                    <h1
-                        class="text-lg font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
-                        Page introuvable
-                    </h1>
-                    <p class="text-sm text-[var(--color-muted)]">
-                        Cette adresse n'existe pas ou n'existe plus : le lien
-                        est peut-être obsolète ou l'URL mal saisie.
-                    </p>
-                </div>
-
-                <div class="flex flex-wrap items-center justify-center gap-3">
-                    <a
-                        :href="dashboard.url()"
-                        class="back-btn back-btn--primary"
-                    >
-                        Tableau de bord
-                    </a>
-                    <a :href="home.url()" class="back-btn back-btn--secondary">
-                        Retour à l'accueil
-                    </a>
-                </div>
+            <div class="flex flex-wrap items-center justify-center gap-3">
+                <Button as-child>
+                    <Link :href="dashboard.url()">Tableau de bord</Link>
+                </Button>
+                <Button as-child variant="outline">
+                    <Link :href="home.url()">Retour à l'accueil</Link>
+                </Button>
             </div>
         </div>
-    </div>
+    </main>
 </template>
