@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\RegisterController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +40,7 @@ Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        Route::inertia('/', 'back/Dashboard')->name('dashboard');
+        Route::get('/', fn (): \Inertia\Response => Inertia::render('back/Dashboard'))->name('dashboard');
 
         Route::middleware('can:manage-modules')->group(function (): void {
             Route::get('modules', [ModuleController::class, 'index'])->name('modules.index');

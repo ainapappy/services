@@ -30,6 +30,12 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        if ($user === null) {
+            // The "auth" middleware guarantees a user on this route; the
+            // guard only satisfies the nullable signature.
+            return redirect()->route('login');
+        }
+
         $user->fill($request->validated());
 
         if ($user->isDirty('email')) {

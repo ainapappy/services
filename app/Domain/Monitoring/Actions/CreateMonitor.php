@@ -16,10 +16,16 @@ class CreateMonitor
      */
     public function handle(array $attributes): Monitor
     {
+        $type = $attributes['type'] ?? null;
+        $target = $attributes['target'] ?? null;
+
         return Monitor::query()->create([
             'name' => $attributes['name'],
             'type' => $attributes['type'],
-            'target' => Monitor::normalizeTarget($attributes['type'], $attributes['target'] ?? null),
+            'target' => Monitor::normalizeTarget(
+                is_string($type) ? $type : '',
+                is_array($target) ? $target : null,
+            ),
             'latency_threshold_ms' => $attributes['latency_threshold_ms'] ?? null,
             'active' => $attributes['active'],
         ]);

@@ -58,11 +58,11 @@ class HandleInertiaRequests extends Middleware
             // created secret crosses the wire a single time and is then
             // gone from the session.
             'flash' => [
-                'secret' => fn (): ?string => $request->session()->get('secret'),
+                'secret' => fn (): ?string => is_string($secret = $request->session()->get('secret')) ? $secret : null,
                 // Flashed once by the Connectors connection test: the
                 // status, the latency and a safe error message. Never
                 // the credentials.
-                'testResult' => fn (): ?array => $request->session()->get('testResult'),
+                'testResult' => fn (): ?array => is_array($result = $request->session()->get('testResult')) ? $result : null,
             ],
         ];
     }

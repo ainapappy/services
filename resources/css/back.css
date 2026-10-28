@@ -25,7 +25,8 @@ body {
    -------------------------------------------------------------------------- */
 
 .back-nav-label {
-    color: rgba(255, 255, 255, 0.4);
+    /* Alpha releve : 0.4 plafonnait a 3.83:1 sur l'encre (AA exige 4.5). */
+    color: rgba(255, 255, 255, 0.55);
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -57,7 +58,7 @@ body {
 }
 
 .back-nav-item[aria-current='page'] {
-    background-color: var(--color-accent);
+    background-color: color-mix(in srgb, var(--color-accent) 94%, #000000);
     color: #ffffff;
 }
 
@@ -118,8 +119,10 @@ body {
     opacity: 0.55;
 }
 
+/* Fond assombri (94 % d'accent) : blanc dessus passe AA (4.94:1),
+   l'accent brut (#6366f1) plafonne a 4.47:1. */
 .back-btn--primary {
-    background-color: var(--color-accent);
+    background-color: color-mix(in srgb, var(--color-accent) 94%, #000000);
     color: #ffffff;
 }
 
@@ -352,6 +355,44 @@ body {
     background-color: #fef2f2;
     border-color: #fecaca;
     color: #b91c1c;
+}
+
+/* --------------------------------------------------------------------------
+   Etat vide des listes (composant BackEmptyState.vue)
+   -------------------------------------------------------------------------- */
+
+/* Surface de carte, contenu centre : titre, explication, action. */
+.back-empty {
+    align-items: center;
+    background-color: var(--color-surface);
+    border: 1px solid rgba(23, 23, 28, 0.09);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 4rem 1.5rem;
+    text-align: center;
+}
+
+.back-empty-title {
+    color: var(--color-ink);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.back-empty-desc {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    line-height: 1.375rem;
+    max-width: 24rem;
+}
+
+.back-empty-desc--wide {
+    max-width: 28rem;
+}
+
+.back-empty-action {
+    margin-top: 0.5rem;
 }
 
 /* --------------------------------------------------------------------------
@@ -857,6 +898,12 @@ body {
 
     .back-modal-overlay,
     .back-modal {
+        animation: none;
+    }
+
+    /* Anneau statique : l'etat de chargement reste porte par aria-busy
+       et le libelle du bouton. */
+    .back-spinner {
         animation: none;
     }
 }

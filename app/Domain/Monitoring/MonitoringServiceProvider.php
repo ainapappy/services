@@ -22,14 +22,11 @@ class MonitoringServiceProvider extends ServiceProvider
      * The back-office routes live in the domain, wrapped in the
      * "module:monitoring" middleware: disabling the module answers 404
      * on every monitoring route without touching the rest of the
-     * platform. The alert mail template is a provisional one, namespaced
-     * "monitoring::" and owned by the domain — it will be replaced by
-     * the definitive mail design in phase 09.
+     * platform. The alert mail renders the project mail skeleton
+     * (resources/views/mail/), shared by every email of the platform.
      */
     public function boot(): void
     {
-        $this->loadViewsFrom(__DIR__.'/views', 'monitoring');
-
         $this->commands([RunMonitoringCommand::class]);
 
         Route::middleware('web')

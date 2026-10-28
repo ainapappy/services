@@ -8,6 +8,7 @@ import { create, destroy, edit } from '@/routes/admin/pricing/tables';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 defineProps<BackPricingTablesPageProps>();
 
@@ -78,21 +79,15 @@ function formatPublishedAt(value: string | null): string {
             </header>
 
             <!-- Etat vide -->
-            <div
-                v-if="tables.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
-            >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucune table
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Créez votre première table de prix : elle sera rendue sur la
-                    page /pricing dès sa publication.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Nouvelle table
-                </a>
-            </div>
+            <BackEmptyState v-if="tables.length === 0" title="Aucune table">
+                Créez votre première table de prix : elle sera rendue sur la
+                page /pricing dès sa publication.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Nouvelle table
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

@@ -16,6 +16,7 @@ import { create, destroy, edit, test } from '@/routes/admin/connectors';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 import BackStatus from '../../components/BackStatus.vue';
 
 const props = defineProps<BackConnectorsIndexPageProps>();
@@ -253,22 +254,18 @@ function onDestroy(connector: ConnectorListItem): void {
             </BackStatus>
 
             <!-- Etat vide -->
-            <div
+            <BackEmptyState
                 v-if="connectors.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucun connecteur"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun connecteur
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Créez votre premier connecteur pour relier un service
-                    externe : ses credentials seront chiffrés au repos et jamais
-                    réaffichés.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Créer un connecteur
-                </a>
-            </div>
+                Créez votre premier connecteur pour relier un service externe :
+                ses credentials seront chiffrés au repos et jamais réaffichés.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Créer un connecteur
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

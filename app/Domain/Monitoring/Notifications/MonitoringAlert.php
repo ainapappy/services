@@ -12,9 +12,9 @@ use Illuminate\Notifications\Notification;
  * The alert notification of a monitoring transition: mail is the
  * primary channel, the log channel is the local fallback.
  *
- * The Blade template is a deliberately sober placeholder (plain HTML,
- * background #f3f3f1, white card, #6366f1 accent, text only, no emoji,
- * no image); the definitive mail design lands in phase 09.
+ * The mail renders the project mail skeleton (mail.monitoring-alert):
+ * status, monitor, latency, message and date, with the alert icon —
+ * French copy, no emoji, no remote image.
  */
 class MonitoringAlert extends Notification
 {
@@ -38,13 +38,13 @@ class MonitoringAlert extends Notification
     }
 
     /**
-     * Build the mail message from the provisional alert template.
+     * Build the mail message from the project mail skeleton.
      */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
             ->subject($this->subject())
-            ->view('monitoring::alert', $this->templateData());
+            ->view('mail.monitoring-alert', $this->templateData());
     }
 
     /**
@@ -72,27 +72,72 @@ class MonitoringAlert extends Notification
      */
     private function subject(): string
     {
-        $state = $this->check->status === MonitorCheck::STATUS_DOWN ? 'Down' : 'Degraded';
-
-        return sprintf('[Monitoring] %s: %s', $state, $this->monitor->name);
+        return sprintf('[Monitoring] %s : %s', $this->statusLabel(), $this->monitor->name);
     }
 
     /**
-     * The data handed to the Blade template.
+     * The data handed to the Blade view.
      *
-     * @return array<string, int|string|null>
+     * @return array<string, int|string>
      */
     private function templateData(): array
     {
         return [
             'subject' => $this->subject(),
             'monitorName' => $this->monitor->name,
-            'monitorType' => $this->monitor->type,
-            'level' => $this->alert->level,
-            'status' => $this->check->status,
-            'latencyMs' => $this->check->latency_ms,
-            'message' => $this->check->message ?? 'No detail returned by the check.',
-            'occurredAt' => $this->check->checked_at->toISOString(),
+            'monitorTypeLabel' => $this->monitorTypeLabel(),
+            'statusLabel' => $this->statusLabel(),
+            'levelLabel' => $this->levelLabel(),
+            'latencyLabel' => $this->latencyLabel(),
+            'message' => $this->check->message ?? 'Aucun détail retourné par le contrôle.',
+            'occurredAt' => $this->check->checked_at->format('d/m/Y à H:i').' UTC',
+            'actionUrl' => route('admin.monitoring.dashboard'),
         ];
+    }
+
+    /**
+     * The French label of the check status.
+     */
+    private function statusLabel(): string
+    {
+        return match ($this->check->status) {
+            MonitorCheck::STATUS_DOWN => 'En panne',
+            MonitorCheck::STATUS_DEGRADED => 'Dégradé',
+            default => 'Opérationnel',
+        };
+    }
+
+    /**
+     * The French label of the alert level.
+     */
+    private function levelLabel(): string
+    {
+        return match ($this->alert->level) {
+            MonitorAlert::LEVEL_WARNING => 'Avertissement',
+            MonitorAlert::LEVEL_CRITICAL => 'Critique',
+            default => $this->alert->level,
+        };
+    }
+
+    /**
+     * The French label of the monitor type.
+     */
+    private function monitorTypeLabel(): string
+    {
+        return match ($this->monitor->type) {
+            Monitor::TYPE_CONNECTOR => 'connecteur',
+            Monitor::TYPE_GATEWAY => 'passerelle',
+            default => 'webhook',
+        };
+    }
+
+    /**
+     * The measured latency, or its explicit absence.
+     */
+    private function latencyLabel(): string
+    {
+        return $this->check->latency_ms === null
+            ? 'Non mesurée'
+            : $this->check->latency_ms.' ms';
     }
 }

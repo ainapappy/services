@@ -9,6 +9,7 @@ import { create, destroy, edit, toggle } from '@/routes/admin/pricing/plans';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 import BackToggle from '../../components/BackToggle.vue';
 
 const props = defineProps<BackPricingPlansPageProps>();
@@ -115,21 +116,15 @@ function onDestroy(plan: PricingPlan): void {
             </header>
 
             <!-- Etat vide -->
-            <div
-                v-if="sortedPlans.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
-            >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun plan
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Créez votre premier plan tarifaire : il pourra ensuite être
-                    associé à une table de prix publiée côté vitrine.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Nouveau plan
-                </a>
-            </div>
+            <BackEmptyState v-if="sortedPlans.length === 0" title="Aucun plan">
+                Créez votre premier plan tarifaire : il pourra ensuite être
+                associé à une table de prix publiée côté vitrine.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Nouveau plan
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

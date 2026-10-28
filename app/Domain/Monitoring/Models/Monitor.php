@@ -92,7 +92,7 @@ class Monitor extends Model
      * platform targets and always store an empty target. The routed
      * monitor keeps its previous connector when an update omits the id.
      *
-     * @param  array<string, mixed>|null  $target
+     * @param  array<array-key, mixed>|null  $target
      * @return array<string, int>
      */
     public static function normalizeTarget(string $type, ?array $target, ?self $existing = null): array
@@ -105,7 +105,7 @@ class Monitor extends Model
             ?? $existing?->target['connectorId']
             ?? 0;
 
-        return ['connectorId' => (int) $connectorId];
+        return ['connectorId' => is_numeric($connectorId) ? (int) $connectorId : 0];
     }
 
     /**

@@ -327,7 +327,7 @@ function onLogout(): void {
                         @click="menuOpen = !menuOpen"
                     >
                         <span
-                            class="flex size-7 items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-semibold text-white"
+                            class="flex size-7 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--color-accent)_94%,#000)] text-xs font-semibold text-white"
                             aria-hidden="true"
                         >
                             {{ initials(user.name) }}

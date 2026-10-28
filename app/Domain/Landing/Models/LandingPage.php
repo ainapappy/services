@@ -93,15 +93,15 @@ class LandingPage extends Model
             'hero_subtitle' => $data['hero_subtitle'],
             'ctas' => collect($data['ctas'] ?? [])
                 ->map(fn (array $cta): array => [
-                    'label' => (string) ($cta['label'] ?? ''),
-                    'url' => (string) ($cta['url'] ?? ''),
-                    'style' => (string) ($cta['style'] ?? 'primary'),
+                    'label' => is_string($cta['label'] ?? null) ? $cta['label'] : '',
+                    'url' => is_string($cta['url'] ?? null) ? $cta['url'] : '',
+                    'style' => is_string($cta['style'] ?? null) ? $cta['style'] : 'primary',
                 ])
                 ->values()
                 ->all(),
             'seo' => [
-                'title' => (string) ($data['seo']['title'] ?? ''),
-                'description' => (string) ($data['seo']['description'] ?? ''),
+                'title' => is_string($data['seo']['title'] ?? null) ? $data['seo']['title'] : '',
+                'description' => is_string($data['seo']['description'] ?? null) ? $data['seo']['description'] : '',
             ],
             'is_home' => (bool) ($data['is_home'] ?? false),
         ]);

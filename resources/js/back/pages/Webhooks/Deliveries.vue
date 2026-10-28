@@ -18,6 +18,7 @@ import {
 import { index, show } from '@/routes/admin/webhooks/deliveries';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 const props = defineProps<BackWebhooksDeliveriesPageProps>();
 
@@ -239,40 +240,32 @@ function formatResponseCode(responseCode: number | null): string {
             </div>
 
             <!-- Etat vide : aucun resultat pour ces filtres -->
-            <div
+            <BackEmptyState
                 v-if="deliveries.length === 0 && hasActiveFilters"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucune delivery pour ces filtres"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucune delivery pour ces filtres
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Aucun envoi journalisé ne correspond au statut, à
-                    l'événement ou à l'endpoint sélectionné.
-                </p>
-                <button
-                    type="button"
-                    class="back-btn back-btn--secondary mt-2"
-                    @click="resetFilters"
-                >
-                    Réinitialiser les filtres
-                </button>
-            </div>
+                Aucun envoi journalisé ne correspond au statut, à l'événement ou
+                à l'endpoint sélectionné.
+                <template #action>
+                    <button
+                        type="button"
+                        class="back-btn back-btn--secondary"
+                        @click="resetFilters"
+                    >
+                        Réinitialiser les filtres
+                    </button>
+                </template>
+            </BackEmptyState>
 
             <!-- Etat vide : aucune delivery du tout -->
-            <div
+            <BackEmptyState
                 v-else-if="deliveries.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucune delivery"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucune delivery
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Les envois apparaîtront ici dès qu'un événement souscrit par
-                    un endpoint actif sera déclenché (publication d'une landing,
-                    d'une table de prix, changement de statut d'un connecteur).
-                </p>
-            </div>
+                Les envois apparaîtront ici dès qu'un événement souscrit par un
+                endpoint actif sera déclenché (publication d'une landing, d'une
+                table de prix, changement de statut d'un connecteur).
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

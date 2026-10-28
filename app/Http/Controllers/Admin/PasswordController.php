@@ -13,7 +13,15 @@ class PasswordController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
+        $user = $request->user();
+
+        if ($user === null) {
+            // The "auth" middleware guarantees a user on this route; the
+            // guard only satisfies the nullable signature.
+            return redirect()->route('login');
+        }
+
+        $user->update([
             'password' => $request->validated('password'),
         ]);
 

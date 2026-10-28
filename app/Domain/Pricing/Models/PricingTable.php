@@ -106,8 +106,8 @@ class PricingTable extends Model
             'subtitle' => $data['subtitle'],
             'faq' => collect($data['faq'] ?? [])
                 ->map(fn (array $entry): array => [
-                    'question' => (string) ($entry['question'] ?? ''),
-                    'answer' => (string) ($entry['answer'] ?? ''),
+                    'question' => is_string($entry['question'] ?? null) ? $entry['question'] : '',
+                    'answer' => is_string($entry['answer'] ?? null) ? $entry['answer'] : '',
                 ])
                 ->values()
                 ->all(),

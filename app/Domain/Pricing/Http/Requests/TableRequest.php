@@ -3,6 +3,7 @@
 namespace App\Domain\Pricing\Http\Requests;
 
 use App\Domain\Pricing\Models\PricingTable;
+use App\Http\Requests\Concerns\NarrowsValidatedPayload;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 abstract class TableRequest extends FormRequest
 {
+    use NarrowsValidatedPayload;
+
     /**
      * Authorize the request: the "can" middleware already enforced the
      * PricingTable policy on every route.
@@ -25,15 +28,17 @@ abstract class TableRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $data = ['slug' => Str::slug((string) $this->input('slug'))];
+        $slug = $this->input('slug');
+
+        $data = ['slug' => Str::slug(is_string($slug) ? $slug : '')];
 
         // Non-array faq / plan_ids payloads are left untouched so the
         // "array" rule rejects them with a clear message.
         if (is_array($this->input('faq'))) {
             $data['faq'] = collect($this->input('faq'))
                 ->map(fn (mixed $entry): array => is_array($entry) ? [
-                    'question' => trim((string) ($entry['question'] ?? '')),
-                    'answer' => trim((string) ($entry['answer'] ?? '')),
+                    'question' => trim(is_string($entry['question'] ?? null) ? $entry['question'] : ''),
+                    'answer' => trim(is_string($entry['answer'] ?? null) ? $entry['answer'] : ''),
                 ] : ['question' => '', 'answer' => ''])
                 ->values()
                 ->all();
@@ -41,7 +46,7 @@ abstract class TableRequest extends FormRequest
 
         if (is_array($this->input('plan_ids'))) {
             $data['plan_ids'] = collect($this->input('plan_ids'))
-                ->map(fn (mixed $id): int => (int) $id)
+                ->map(fn (mixed $id): int => is_int($id) ? $id : 0)
                 ->values()
                 ->all();
         }
@@ -76,20 +81,41 @@ abstract class TableRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with a precise shape, as documented by the
-     * rules above.
+     * Get the validated data with the precise shape documented by the
+     * rules above: every field is re-checked while building the array.
      *
-     * @return array{
+     * @return ($key is null ? array{
      *     slug: string,
      *     title: string,
      *     subtitle: string,
      *     faq: list<array{question: string, answer: string}>,
      *     plan_ids: list<int>
-     * }
+     * } : mixed)
      */
     public function validated($key = null, $default = null)
     {
-        return parent::validated($key, $default);
+        if ($key !== null || $default !== null) {
+            return parent::validated($key, $default);
+        }
+
+        $payload = $this->validatedPayload();
+
+        return [
+            'slug' => $this->stringField($payload, 'slug'),
+            'title' => $this->stringField($payload, 'title'),
+            'subtitle' => $this->stringField($payload, 'subtitle'),
+            'faq' => collect($this->arrayField($payload, 'faq'))
+                ->map(fn (mixed $entry): array => [
+                    'question' => is_array($entry) ? $this->stringField($entry, 'question') : '',
+                    'answer' => is_array($entry) ? $this->stringField($entry, 'answer') : '',
+                ])
+                ->values()
+                ->all(),
+            'plan_ids' => collect($this->arrayField($payload, 'plan_ids'))
+                ->map(fn (mixed $id): int => is_int($id) ? $id : 0)
+                ->values()
+                ->all(),
+        ];
     }
 
     /**

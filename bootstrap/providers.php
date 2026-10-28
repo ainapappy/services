@@ -8,10 +8,12 @@ use App\Domain\Pricing\PricingServiceProvider;
 use App\Domain\Webhooks\WebhooksServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
+use App\Providers\MailServiceProvider;
 
 return [
     AppServiceProvider::class,
     FortifyServiceProvider::class,
+    MailServiceProvider::class,
     ConnectorsServiceProvider::class,
     GatewayServiceProvider::class,
     LandingServiceProvider::class,

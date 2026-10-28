@@ -21,6 +21,7 @@ import { create, destroy, edit } from '@/routes/admin/monitoring/monitors';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 const props = defineProps<BackMonitoringMonitorsPageProps>();
 
@@ -152,22 +153,20 @@ function onDestroy(monitor: MonitorListItem): void {
             </header>
 
             <!-- Etat vide -->
-            <div
+            <BackEmptyState
                 v-if="props.monitors.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucun moniteur"
+                :wide="true"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun moniteur
-                </p>
-                <p class="max-w-md text-sm text-[var(--color-muted)]">
-                    Créez un moniteur pour superviser un connecteur, la gateway
-                    ou les webhooks : chaque contrôle est journalisé et une
-                    alerte est levée dès qu'une cible passe hors ligne.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Créer un moniteur
-                </a>
-            </div>
+                Créez un moniteur pour superviser un connecteur, la gateway ou
+                les webhooks : chaque contrôle est journalisé et une alerte est
+                levée dès qu'une cible passe hors ligne.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Créer un moniteur
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

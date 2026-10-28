@@ -2,12 +2,15 @@
 
 namespace App\Domain\Gateway\Http\Requests;
 
+use App\Http\Requests\Concerns\NarrowsValidatedPayload;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateApiKeyRequest extends FormRequest
 {
+    use NarrowsValidatedPayload;
+
     /**
      * Authorize the request: the "can:manage-settings" middleware already
      * enforced the administrator-only gate on the route.
@@ -39,18 +42,43 @@ class CreateApiKeyRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with a precise shape, as documented by the
-     * rules above.
+     * Get the validated data with the precise shape documented by the
+     * rules above: every field is re-checked while building the array.
      *
-     * @return array{
+     * @return ($key is null ? array{
      *     name: string,
      *     abilities: list<string>,
      *     rate_limit?: int|null,
      *     expires_at?: string|null
-     * }
+     * } : mixed)
      */
     public function validated($key = null, $default = null)
     {
-        return parent::validated($key, $default);
+        if ($key !== null || $default !== null) {
+            return parent::validated($key, $default);
+        }
+
+        $payload = $this->validatedPayload();
+
+        $data = [
+            'name' => $this->stringField($payload, 'name'),
+            'abilities' => collect($this->arrayField($payload, 'abilities'))
+                ->map(fn (mixed $ability): string => is_string($ability) ? $ability : '')
+                ->values()
+                ->all(),
+        ];
+
+        $rateLimit = $payload['rate_limit'] ?? null;
+        $expiresAt = $payload['expires_at'] ?? null;
+
+        if (is_int($rateLimit)) {
+            $data['rate_limit'] = $rateLimit;
+        }
+
+        if (is_string($expiresAt)) {
+            $data['expires_at'] = $expiresAt;
+        }
+
+        return $data;
     }
 }

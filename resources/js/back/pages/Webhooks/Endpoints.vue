@@ -17,6 +17,7 @@ import { index as deliveriesIndex } from '@/routes/admin/webhooks/deliveries';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 const props = defineProps<BackWebhooksEndpointsPageProps>();
 
@@ -198,22 +199,16 @@ const hasEndpoints = computed(() => props.endpoints.length > 0);
             </header>
 
             <!-- Etat vide -->
-            <div
-                v-if="!hasEndpoints"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
-            >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun endpoint
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Déclarez votre premier endpoint : il recevra les événements
-                    cochés avec un payload signé (HMAC-SHA256) vérifiable via
-                    son secret.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Créer un endpoint
-                </a>
-            </div>
+            <BackEmptyState v-if="!hasEndpoints" title="Aucun endpoint">
+                Déclarez votre premier endpoint : il recevra les événements
+                cochés avec un payload signé (HMAC-SHA256) vérifiable via son
+                secret.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Créer un endpoint
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

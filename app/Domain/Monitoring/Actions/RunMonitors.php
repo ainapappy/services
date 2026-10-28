@@ -65,6 +65,7 @@ class RunMonitors
     {
         $monitors = Monitor::query()
             ->where('active', true)
+            ->with('latestCheck')
             ->get();
 
         foreach ($monitors as $monitor) {
@@ -134,7 +135,8 @@ class RunMonitors
      */
     private function resolveGateway(): CheckOutcome
     {
-        $target = rtrim((string) config('app.url'), '/').'/api/v1/health';
+        $url = config('app.url');
+        $target = rtrim(is_string($url) ? $url : '', '/').'/api/v1/health';
         $startedAt = hrtime(true);
 
         try {

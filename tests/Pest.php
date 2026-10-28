@@ -35,6 +35,33 @@ expect()->extend('toBeOne', function () {
     return $this->toBe(1);
 });
 
+expect()->extend('toBeEmojiFree', function () {
+    preg_match(
+        '/[\x{1F000}-\x{1FFFF}\x{2B00}-\x{2BFF}\x{2600}-\x{27BF}\x{FE0F}\x{2049}\x{203C}\x{2190}-\x{21FF}]/u',
+        (string) $this->value,
+        $matches,
+    );
+
+    expect($matches)->toBeEmpty();
+
+    return $this;
+});
+
+/*
+|--------------------------------------------------------------------------
+| Global setup
+|--------------------------------------------------------------------------
+|
+| Inertia page renders (the 404 pages included) resolve their page
+| entry against the Vite manifest: the suite must stay independent of
+| any frontend build, so Vite is faked for every test.
+|
+*/
+
+beforeEach(function () {
+    $this->withoutVite();
+});
+
 /*
 |--------------------------------------------------------------------------
 | Functions

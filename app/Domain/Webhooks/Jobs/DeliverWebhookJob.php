@@ -4,6 +4,7 @@ namespace App\Domain\Webhooks\Jobs;
 
 use App\Domain\Webhooks\Events\WebhookDeliveryFailed;
 use App\Domain\Webhooks\Models\WebhookDelivery;
+use App\Domain\Webhooks\Models\WebhookEndpoint;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -78,7 +79,7 @@ final class DeliverWebhookJob implements ShouldQueue
     public static function dispatchSafely(WebhookDelivery $delivery): void
     {
         try {
-            self::dispatch($delivery->getKey());
+            self::dispatch($delivery->id);
         } catch (Throwable $exception) {
             report($exception);
         }
@@ -92,6 +93,15 @@ final class DeliverWebhookJob implements ShouldQueue
         /** @var WebhookDelivery $delivery */
         $delivery = WebhookDelivery::query()->whereKey($this->deliveryId)->firstOrFail();
         $endpoint = $delivery->endpoint;
+
+        if (! $endpoint instanceof WebhookEndpoint) {
+            // The endpoint row vanished mid-flight (a rare race with its
+            // deletion): nothing to push to, the delivery is journaled
+            // and the job ends quietly.
+            $delivery->forceFill(['error' => 'The endpoint no longer exists.'])->save();
+
+            return;
+        }
 
         // The counter is persisted before the attempt, not after: a
         // crashed process cannot lose a try, and the value re-read from

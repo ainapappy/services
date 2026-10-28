@@ -91,8 +91,8 @@ class PricingPlan extends Model
             'price_monthly' => (int) $data['price_monthly'],
             'price_yearly' => (int) $data['price_yearly'],
             'currency' => $data['currency'],
-            'features' => collect($data['features'] ?? [])
-                ->map(fn (mixed $feature): string => (string) $feature)
+            'features' => collect(is_array($data['features'] ?? null) ? $data['features'] : [])
+                ->map(fn (mixed $feature): string => is_string($feature) ? $feature : '')
                 ->values()
                 ->all(),
             'popular' => (bool) ($data['popular'] ?? false),

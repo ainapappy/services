@@ -40,17 +40,21 @@ class DeliveryController extends Controller
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->get()
-            ->map(fn (WebhookDelivery $delivery): array => [
-                'id' => $delivery->id,
-                'event' => $delivery->event,
-                'status' => $delivery->status,
-                'attempts' => $delivery->attempts,
-                'responseCode' => $delivery->response_code,
-                'durationMs' => $delivery->duration_ms,
-                'createdAt' => $delivery->created_at->toISOString(),
-                'deliveredAt' => $delivery->delivered_at?->toISOString(),
-                'endpointUrl' => $delivery->endpoint->url,
-            ])
+            ->map(function (WebhookDelivery $delivery): array {
+                $endpoint = $delivery->endpoint;
+
+                return [
+                    'id' => $delivery->id,
+                    'event' => $delivery->event,
+                    'status' => $delivery->status,
+                    'attempts' => $delivery->attempts,
+                    'responseCode' => $delivery->response_code,
+                    'durationMs' => $delivery->duration_ms,
+                    'createdAt' => $delivery->created_at->toISOString(),
+                    'deliveredAt' => $delivery->delivered_at?->toISOString(),
+                    'endpointUrl' => $endpoint?->url,
+                ];
+            })
             ->values()
             ->all();
 
@@ -83,6 +87,10 @@ class DeliveryController extends Controller
      */
     public function show(WebhookDelivery $webhookDelivery): Response
     {
+        // Deliveries are cascade-deleted with their endpoint, so the
+        // relation is always resolved here.
+        $endpoint = $webhookDelivery->endpoint;
+
         return Inertia::render('back/Webhooks/Delivery', [
             'delivery' => [
                 'id' => $webhookDelivery->id,
@@ -95,7 +103,7 @@ class DeliveryController extends Controller
                 'durationMs' => $webhookDelivery->duration_ms,
                 'createdAt' => $webhookDelivery->created_at->toISOString(),
                 'deliveredAt' => $webhookDelivery->delivered_at?->toISOString(),
-                'endpointUrl' => $webhookDelivery->endpoint->url,
+                'endpointUrl' => $endpoint?->url,
             ],
         ]);
     }

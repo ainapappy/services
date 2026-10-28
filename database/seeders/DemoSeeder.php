@@ -38,8 +38,8 @@ class DemoSeeder extends Seeder
         $this->seedPricing();
         $this->seedApiKeys();
 
-        $this->command->info('Comptes : admin@services.test / editor@services.test — mot de passe "'.self::DEMO_PASSWORD.'".');
-        $this->command->info('Cle API de demonstration : "'.self::DEMO_SECRET.'".');
+        $this->command?->info('Comptes : admin@services.test / editor@services.test — mot de passe "'.self::DEMO_PASSWORD.'".');
+        $this->command?->info('Cle API de demonstration : "'.self::DEMO_SECRET.'".');
     }
 
     /**

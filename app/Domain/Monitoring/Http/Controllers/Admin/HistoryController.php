@@ -35,6 +35,10 @@ class HistoryController extends Controller
         $appliedStatus = in_array($status, MonitorCheck::STATUSES, true) ? $status : null;
         $appliedDays = $days > 0 && $days <= self::MAX_FILTER_DAYS ? $days : null;
 
+        // The cutoff is computed outside the query builder callback: the
+        // "when" closure keeps the filter readable without narrowing.
+        $cutoff = $appliedDays !== null ? now()->subDays($appliedDays) : null;
+
         $checks = MonitorCheck::query()
             ->with('monitor:id,name,type')
             ->when($appliedType !== null, fn (Builder $query): Builder => $query->whereHas(
@@ -42,23 +46,23 @@ class HistoryController extends Controller
                 fn (Builder $monitorQuery): Builder => $monitorQuery->where('type', $appliedType),
             ))
             ->when($appliedStatus !== null, fn (Builder $query): Builder => $query->where('status', $appliedStatus))
-            ->when($appliedDays !== null, fn (Builder $query): Builder => $query->where(
-                'checked_at',
-                '>=',
-                now()->subDays($appliedDays),
-            ))
+            ->when($cutoff !== null, fn (Builder $query): Builder => $query->where('checked_at', '>=', $cutoff))
             ->orderByDesc('checked_at')
             ->orderByDesc('id')
             ->get()
-            ->map(fn (MonitorCheck $check): array => [
-                'id' => $check->id,
-                'monitorName' => $check->monitor->name,
-                'type' => $check->monitor->type,
-                'status' => $check->status,
-                'latencyMs' => $check->latency_ms,
-                'message' => $check->message,
-                'checkedAt' => $check->checked_at->toISOString(),
-            ])
+            ->map(function (MonitorCheck $check): array {
+                $monitor = $check->monitor;
+
+                return [
+                    'id' => $check->id,
+                    'monitorName' => $monitor?->name,
+                    'type' => $monitor?->type,
+                    'status' => $check->status,
+                    'latencyMs' => $check->latency_ms,
+                    'message' => $check->message,
+                    'checkedAt' => $check->checked_at->toISOString(),
+                ];
+            })
             ->values()
             ->all();
 

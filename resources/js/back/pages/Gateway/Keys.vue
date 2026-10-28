@@ -17,6 +17,7 @@ import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
 import BackCard from '../../components/BackCard.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 import BackField from '../../components/BackField.vue';
 import BackInput from '../../components/BackInput.vue';
 import BackStatus from '../../components/BackStatus.vue';
@@ -380,21 +381,15 @@ const hasKeys = computed(() => props.keys.length > 0);
             </BackCard>
 
             <!-- Etat vide -->
-            <div
-                v-if="!hasKeys"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
-            >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucune clé API
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Créez votre première clé pour consommer les endpoints
-                    sécurisés du module Gateway.
-                </p>
-                <BackButton class="mt-2" @click="openForm">
-                    Créer une clé API
-                </BackButton>
-            </div>
+            <BackEmptyState v-if="!hasKeys" title="Aucune clé API">
+                Créez votre première clé pour consommer les endpoints sécurisés
+                du module Gateway.
+                <template #action>
+                    <BackButton @click="openForm">
+                        Créer une clé API
+                    </BackButton>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

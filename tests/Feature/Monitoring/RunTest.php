@@ -327,7 +327,7 @@ test('a webhook monitor ignores successful deliveries', function () {
     expect(latestCheckFor($monitor)->status)->toBe(MonitorCheck::STATUS_UP);
 });
 
-test('the alert mail uses the provisional domain template with an explicit subject', function () {
+test('the alert mail uses the project skeleton with the monitor name and an explicit subject', function () {
     Notification::fake();
 
     $admin = User::factory()->admin()->create();
@@ -342,8 +342,18 @@ test('the alert mail uses the provisional domain template with an explicit subje
         function (MonitoringAlert $notification) use ($admin): bool {
             $mail = $notification->toMail($admin);
 
-            return $mail->subject === '[Monitoring] Down: Blog monitor'
-                && $mail->view === 'monitoring::alert';
+            expect($mail->subject)->toBe('[Monitoring] En panne : Blog monitor')
+                ->and($mail->view)->toBe('mail.monitoring-alert');
+
+            $html = view($mail->view, $mail->viewData)->render();
+
+            expect($html)->toContain('Blog monitor')
+                ->toContain('En panne')
+                ->toContain('Critique')
+                ->toContain('/admin/monitoring')
+                ->toBeEmojiFree();
+
+            return true;
         },
     );
 });

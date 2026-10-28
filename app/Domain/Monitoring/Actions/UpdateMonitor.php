@@ -22,9 +22,12 @@ class UpdateMonitor
             ->all();
 
         if (array_key_exists('type', $attributes) || array_key_exists('target', $attributes)) {
+            $type = $attributes['type'] ?? $monitor->type;
+            $target = $attributes['target'] ?? null;
+
             $fill['target'] = Monitor::normalizeTarget(
-                $attributes['type'] ?? $monitor->type,
-                $attributes['target'] ?? null,
+                is_string($type) ? $type : '',
+                is_array($target) ? $target : null,
                 $monitor,
             );
         }

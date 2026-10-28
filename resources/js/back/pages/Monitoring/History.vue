@@ -17,6 +17,7 @@ import {
 import { dashboard, history as historyIndex } from '@/routes/admin/monitoring';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 const props = defineProps<BackMonitoringHistoryPageProps>();
 
@@ -235,40 +236,32 @@ function formatLatency(latencyMs: number | null): string {
             </div>
 
             <!-- Etat vide : aucun resultat pour ces filtres -->
-            <div
+            <BackEmptyState
                 v-if="checks.length === 0 && hasActiveFilters"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucun contrôle pour ces filtres"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun contrôle pour ces filtres
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Aucun contrôle journalisé ne correspond au type, au statut
-                    ou à la période sélectionnés.
-                </p>
-                <button
-                    type="button"
-                    class="back-btn back-btn--secondary mt-2"
-                    @click="resetFilters"
-                >
-                    Réinitialiser les filtres
-                </button>
-            </div>
+                Aucun contrôle journalisé ne correspond au type, au statut ou à
+                la période sélectionnés.
+                <template #action>
+                    <button
+                        type="button"
+                        class="back-btn back-btn--secondary"
+                        @click="resetFilters"
+                    >
+                        Réinitialiser les filtres
+                    </button>
+                </template>
+            </BackEmptyState>
 
             <!-- Etat vide : aucun controle du tout -->
-            <div
+            <BackEmptyState
                 v-else-if="checks.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucun contrôle"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun contrôle
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Les contrôles apparaîtront ici dès que la commande
-                    <code class="font-mono text-xs">monitoring:run</code>
-                    aura tourné (elle est planifiée toutes les 5 minutes).
-                </p>
-            </div>
+                Les contrôles apparaîtront ici dès que la commande
+                <code class="font-mono text-xs">monitoring:run</code>
+                aura tourné (elle est planifiée toutes les 5 minutes).
+            </BackEmptyState>
 
             <!-- Tableau -->
             <template v-else>

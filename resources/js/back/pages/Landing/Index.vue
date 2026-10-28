@@ -8,6 +8,7 @@ import { create, destroy, edit } from '@/routes/admin/landing';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
 import BackButton from '../../components/BackButton.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 
 defineProps<BackLandingIndexPageProps>();
 
@@ -78,21 +79,18 @@ function formatPublishedAt(value: string | null): string {
             </header>
 
             <!-- Etat vide -->
-            <div
+            <BackEmptyState
                 v-if="landingPages.length === 0"
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
+                title="Aucune page"
             >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucune page
-                </p>
-                <p class="max-w-sm text-sm text-[var(--color-muted)]">
-                    Créez votre première landing page : elle sera rendue côté
-                    vitrine dès sa publication.
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Nouvelle page
-                </a>
-            </div>
+                Créez votre première landing page : elle sera rendue côté
+                vitrine dès sa publication.
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Nouvelle page
+                    </a>
+                </template>
+            </BackEmptyState>
 
             <!-- Tableau -->
             <div v-else class="back-card overflow-x-auto">

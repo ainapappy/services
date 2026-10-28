@@ -25,6 +25,7 @@ import {
 import { resolve as resolveAlert } from '@/routes/admin/monitoring/alerts';
 import BackLayout from '../../layouts/BackLayout.vue';
 import BackBadge from '../../components/BackBadge.vue';
+import BackEmptyState from '../../components/BackEmptyState.vue';
 import BackSparkline from '../../components/BackSparkline.vue';
 import BackStatus from '../../components/BackStatus.vue';
 
@@ -392,28 +393,22 @@ function onResolve(alert: MonitorAlert): void {
             </template>
 
             <!-- Etat vide : aucun moniteur -->
-            <div
-                v-else
-                class="back-card flex flex-col items-center gap-3 px-6 py-16 text-center"
-            >
-                <p class="text-base font-semibold text-[var(--color-ink)]">
-                    Aucun moniteur
-                </p>
-                <p class="max-w-md text-sm text-[var(--color-muted)]">
-                    Créez un moniteur pour superviser un connecteur, la gateway
-                    ou les webhooks : chaque contrôle est journalisé et une
-                    alerte est levée dès qu'une cible passe hors ligne.
-                    <template v-if="connectors.length > 0">
-                        {{ connectors.length }} connecteur{{
-                            connectors.length > 1 ? 's' : ''
-                        }}
-                        sont disponibles pour la supervision.
-                    </template>
-                </p>
-                <a :href="create.url()" class="back-btn back-btn--primary mt-2">
-                    Créer un moniteur
-                </a>
-            </div>
+            <BackEmptyState v-else title="Aucun moniteur" :wide="true">
+                Créez un moniteur pour superviser un connecteur, la gateway ou
+                les webhooks : chaque contrôle est journalisé et une alerte est
+                levée dès qu'une cible passe hors ligne.
+                <template v-if="connectors.length > 0">
+                    {{ connectors.length }} connecteur{{
+                        connectors.length > 1 ? 's' : ''
+                    }}
+                    sont disponibles pour la supervision.
+                </template>
+                <template #action>
+                    <a :href="create.url()" class="back-btn back-btn--primary">
+                        Créer un moniteur
+                    </a>
+                </template>
+            </BackEmptyState>
         </section>
     </BackLayout>
 </template>

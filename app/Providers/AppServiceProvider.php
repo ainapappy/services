@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Core\Modules\ModuleRegistry;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureGates();
+        $this->configureTestHardening();
     }
 
     /**
@@ -64,5 +66,14 @@ class AppServiceProvider extends ServiceProvider
                 ->uncompromised()
             : null,
         );
+    }
+
+    /**
+     * Test-only hardening: lazy loading throws instead of silently
+     * querying — the suite then fails on every N+1 it reveals.
+     */
+    private function configureTestHardening(): void
+    {
+        Model::preventLazyLoading(app()->environment('testing'));
     }
 }

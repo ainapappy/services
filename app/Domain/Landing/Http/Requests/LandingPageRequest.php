@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 abstract class LandingPageRequest extends FormRequest
 {
+    use \App\Http\Requests\Concerns\NarrowsValidatedPayload;
+
     /**
      * Authorize the request: the "can" middleware already enforced the
      * LandingPage policy on every route.
@@ -25,8 +27,10 @@ abstract class LandingPageRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
+        $slug = $this->input('slug');
+
         $this->merge([
-            'slug' => Str::slug((string) $this->input('slug')),
+            'slug' => Str::slug(is_string($slug) ? $slug : ''),
         ]);
     }
 
@@ -71,10 +75,10 @@ abstract class LandingPageRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with a precise shape, as documented by the
-     * rules above.
+     * Get the validated data with the precise shape documented by the
+     * rules above: every field is re-checked while building the array.
      *
-     * @return array{
+     * @return ($key is null ? array{
      *     slug: string,
      *     title: string,
      *     hero_title: string,
@@ -82,11 +86,43 @@ abstract class LandingPageRequest extends FormRequest
      *     ctas: list<array{label: string, url: string, style: string}>,
      *     seo: array{title?: string|null, description?: string|null},
      *     is_home?: bool|null
-     * }
+     * } : mixed)
      */
     public function validated($key = null, $default = null)
     {
-        return parent::validated($key, $default);
+        if ($key !== null || $default !== null) {
+            return parent::validated($key, $default);
+        }
+
+        $payload = $this->validatedPayload();
+        $seo = $this->arrayField($payload, 'seo');
+
+        $data = [
+            'slug' => $this->stringField($payload, 'slug'),
+            'title' => $this->stringField($payload, 'title'),
+            'hero_title' => $this->stringField($payload, 'hero_title'),
+            'hero_subtitle' => $this->stringField($payload, 'hero_subtitle'),
+            'ctas' => collect($this->arrayField($payload, 'ctas'))
+                ->map(fn (mixed $cta): array => [
+                    'label' => is_array($cta) ? $this->stringField($cta, 'label') : '',
+                    'url' => is_array($cta) ? $this->stringField($cta, 'url') : '',
+                    'style' => is_array($cta) ? $this->stringField($cta, 'style', 'primary') : 'primary',
+                ])
+                ->values()
+                ->all(),
+            'seo' => [
+                'title' => $this->nullStringField($seo, 'title'),
+                'description' => $this->nullStringField($seo, 'description'),
+            ],
+        ];
+
+        $isHome = $payload['is_home'] ?? null;
+
+        if (is_bool($isHome)) {
+            $data['is_home'] = $isHome;
+        }
+
+        return $data;
     }
 
     /**

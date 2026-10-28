@@ -11,6 +11,8 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Inertia\Inertia;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -59,4 +61,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // The 404s carry the charter of their area: back-office pages
+        // under /admin, front pages everywhere else — the API surface
+        // keeps its JSON 404 through shouldRenderJsonWhen.
+        $exceptions->renderable(function (NotFoundHttpException $exception, Request $request) {
+            if ($exception->getStatusCode() !== 404
+                || $request->is('api/*') || $request->expectsJson()
+            ) {
+                return null;
+            }
+
+            $component = ($request->is('admin') || $request->is('admin/*'))
+                ? 'back/NotFound'
+                : 'front/NotFound';
+
+            return Inertia::render($component)->toResponse($request)
+                ->setStatusCode(404);
+        });
     })->create();

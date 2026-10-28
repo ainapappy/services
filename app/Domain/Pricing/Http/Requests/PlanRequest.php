@@ -3,6 +3,7 @@
 namespace App\Domain\Pricing\Http\Requests;
 
 use App\Domain\Pricing\Models\PricingPlan;
+use App\Http\Requests\Concerns\NarrowsValidatedPayload;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
@@ -10,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 abstract class PlanRequest extends FormRequest
 {
+    use NarrowsValidatedPayload;
+
     /**
      * Authorize the request: the "can" middleware already enforced the
      * PricingPlan policy on every route.
@@ -25,7 +28,9 @@ abstract class PlanRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        $data = ['slug' => Str::slug((string) $this->input('slug'))];
+        $slug = $this->input('slug');
+
+        $data = ['slug' => Str::slug(is_string($slug) ? $slug : '')];
 
         // A non-array features payload is left untouched so the "array"
         // rule rejects it with a clear message.
@@ -68,10 +73,10 @@ abstract class PlanRequest extends FormRequest
     }
 
     /**
-     * Get the validated data with a precise shape, as documented by the
-     * rules above.
+     * Get the validated data with the precise shape documented by the
+     * rules above: every field is re-checked while building the array.
      *
-     * @return array{
+     * @return ($key is null ? array{
      *     slug: string,
      *     name: string,
      *     tagline: string,
@@ -82,11 +87,46 @@ abstract class PlanRequest extends FormRequest
      *     popular?: bool|null,
      *     active?: bool|null,
      *     sort?: int|null
-     * }
+     * } : mixed)
      */
     public function validated($key = null, $default = null)
     {
-        return parent::validated($key, $default);
+        if ($key !== null || $default !== null) {
+            return parent::validated($key, $default);
+        }
+
+        $payload = $this->validatedPayload();
+
+        $data = [
+            'slug' => $this->stringField($payload, 'slug'),
+            'name' => $this->stringField($payload, 'name'),
+            'tagline' => $this->stringField($payload, 'tagline'),
+            'price_monthly' => $this->intField($payload, 'price_monthly', 0) ?? 0,
+            'price_yearly' => $this->intField($payload, 'price_yearly', 0) ?? 0,
+            'currency' => $this->stringField($payload, 'currency'),
+            'features' => collect($this->arrayField($payload, 'features'))
+                ->map(fn (mixed $feature): string => is_string($feature) ? $feature : '')
+                ->values()
+                ->all(),
+        ];
+
+        $popular = $payload['popular'] ?? null;
+        $active = $payload['active'] ?? null;
+        $sort = $payload['sort'] ?? null;
+
+        if (is_bool($popular)) {
+            $data['popular'] = $popular;
+        }
+
+        if (is_bool($active)) {
+            $data['active'] = $active;
+        }
+
+        if (is_int($sort)) {
+            $data['sort'] = $sort;
+        }
+
+        return $data;
     }
 
     /**
