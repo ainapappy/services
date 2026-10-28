@@ -1,11 +1,18 @@
 <script setup lang="ts">
-// Liste des connecteurs : tableau (nom + url mono tronquee, type en chip,
-// statut en badge, dernier test relatif) avec test de connexion par ligne
-// (spinner pendant l'aller-retour, resultat rendu en bandeau auto-
-// dismissable via le flash `testResult`), edition et suppression avec
-// confirmation. Aucun import hors arbre back/.
+// Liste des connecteurs : tableau shadcn (nom + url mono tronquee, type en
+// badge, statut en badge, dernier test relatif) avec test de connexion par
+// ligne (spinner pendant l'aller-retour, resultat rendu en Alert dis-
+// missable via le flash `testResult`), edition et suppression confirmee
+// par AlertDialog.
 import { Head, router } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import {
+    CableIcon,
+    CircleCheckIcon,
+    CircleXIcon,
+    InfoIcon,
+    XIcon,
+} from '@lucide/vue';
 import type {
     BackConnectorsIndexPageProps,
     ConnectorListItem,
@@ -14,15 +21,44 @@ import type {
 } from '@/types';
 import { create, destroy, edit, test } from '@/routes/admin/connectors';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackBadge from '../../components/BackBadge.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackEmptyState from '../../components/BackEmptyState.vue';
-import BackStatus from '../../components/BackStatus.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+    Empty,
+    EmptyContent,
+    EmptyDescription,
+    EmptyHeader,
+    EmptyMedia,
+    EmptyTitle,
+} from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 
 const props = defineProps<BackConnectorsIndexPageProps>();
 
 /* ------------------------------------------------------------------ */
-/* Libelles et variants de la charte                                    */
+/* Libelles et variants                                                 */
 /* ------------------------------------------------------------------ */
 
 const typeLabels: Record<ConnectorType, string> = {
@@ -38,12 +74,14 @@ const statusLabels: Record<ConnectorStatus, string> = {
     unknown: 'Inconnu',
 };
 
-const statusVariants: Record<ConnectorStatus, 'success' | 'danger' | 'muted'> =
-    {
-        connected: 'success',
-        error: 'danger',
-        unknown: 'muted',
-    };
+const statusVariants: Record<
+    ConnectorStatus,
+    'success' | 'destructive' | 'secondary'
+> = {
+    connected: 'success',
+    error: 'destructive',
+    unknown: 'secondary',
+};
 
 /* ------------------------------------------------------------------ */
 /* Dernier test : relatif en fr-FR, date au-dela d'une semaine          */
@@ -122,7 +160,7 @@ function onTest(connector: ConnectorListItem): void {
 }
 
 /* ------------------------------------------------------------------ */
-/* Resultat du test : bandeau vert / rouge, auto-dismissable            */
+/* Resultat du test : Alert verte / rouge, dismissable                  */
 /* ------------------------------------------------------------------ */
 
 /* Le flash arrive en prop partagee par le middleware sous
@@ -134,14 +172,16 @@ const testResult = computed(() => props.flash?.testResult ?? null);
 const testResultVisible = ref(testResult.value !== null);
 let testResultTimer: number | undefined;
 
-/* Succes vert, echec rouge, test en file d'attente neutre (info). */
-const testResultBannerTone = computed<'success' | 'danger' | 'info'>(() => {
-    if (testResult.value?.status === 'connected') {
-        return 'success';
-    }
+/* Succes vert, echec rouge, test en file d'attente neutre. */
+const testResultAlertVariant = computed<'success' | 'destructive' | 'default'>(
+    () => {
+        if (testResult.value?.status === 'connected') {
+            return 'success';
+        }
 
-    return testResult.value?.status === 'error' ? 'danger' : 'info';
-});
+        return testResult.value?.status === 'error' ? 'destructive' : 'default';
+    },
+);
 
 function announceTestResult(): void {
     if (testResult.value === null) {
@@ -169,14 +209,6 @@ onBeforeUnmount(() => window.clearTimeout(testResultTimer));
 const deletingId = ref<number | null>(null);
 
 function onDestroy(connector: ConnectorListItem): void {
-    if (
-        !window.confirm(
-            `Supprimer le connecteur « ${connector.name} » ? Ses credentials chiffrés seront définitivement effacés. Cette action est irréversible.`,
-        )
-    ) {
-        return;
-    }
-
     if (deletingId.value !== null) {
         return;
     }
@@ -195,37 +227,31 @@ function onDestroy(connector: ConnectorListItem): void {
     <BackLayout>
         <Head title="Connecteurs" />
 
-        <section class="flex flex-col gap-6">
-            <header class="flex flex-wrap items-start justify-between gap-4">
-                <div class="flex flex-col gap-1">
-                    <h1
-                        class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
-                    >
-                        Connecteurs
-                    </h1>
-                    <p class="text-sm text-[var(--color-muted)]">
-                        Intégrez vos services externes (WordPress, Caren, Erpen
-                        ou API libre) : credentials chiffrés au repos et test de
-                        connexion manuel.
-                    </p>
-                </div>
-
-                <a
-                    :href="create.url()"
-                    class="back-btn back-btn--primary shrink-0"
-                >
-                    Nouveau connecteur
-                </a>
-            </header>
+        <div class="flex flex-col gap-6">
+            <BackPageHeader
+                title="Connecteurs"
+                description="Intégrez vos services externes (WordPress, Caren, Erpen ou API libre) : credentials chiffrés au repos et test de connexion manuel."
+            >
+                <template #actions>
+                    <Button as-child>
+                        <a :href="create.url()">Nouveau connecteur</a>
+                    </Button>
+                </template>
+            </BackPageHeader>
 
             <!-- Resultat du dernier test de connexion : vert (succes,
                  avec latence), rouge (echec, message sur) ou neutre
                  (test parti en file d'attente, resultat differe). -->
-            <BackStatus
+            <Alert
                 v-if="testResult !== null && testResultVisible"
-                :tone="testResultBannerTone"
+                :variant="testResultAlertVariant"
+                :role="testResult.status === 'connected' ? 'status' : 'alert'"
+                class="pr-12"
             >
-                <span class="flex-1">
+                <CircleCheckIcon v-if="testResult.status === 'connected'" />
+                <CircleXIcon v-else-if="testResult.status === 'error'" />
+                <InfoIcon v-else />
+                <AlertDescription>
                     <template v-if="testResult.status === 'connected'">
                         Connexion réussie ({{
                             formatLatency(testResult.latencyMs)
@@ -242,136 +268,200 @@ function onDestroy(connector: ConnectorListItem): void {
                         Test de connexion lancé : le résultat s’affichera dans
                         la liste dès la fin de son exécution.
                     </template>
-                </span>
-                <button
+                </AlertDescription>
+                <Button
                     type="button"
-                    class="back-test-banner-dismiss"
+                    variant="ghost"
+                    size="icon-sm"
+                    class="absolute top-2 right-2"
                     aria-label="Masquer le résultat du test"
                     @click="dismissTestResult"
                 >
-                    ×
-                </button>
-            </BackStatus>
+                    <XIcon />
+                </Button>
+            </Alert>
 
             <!-- Etat vide -->
-            <BackEmptyState
-                v-if="connectors.length === 0"
-                title="Aucun connecteur"
-            >
-                Créez votre premier connecteur pour relier un service externe :
-                ses credentials seront chiffrés au repos et jamais réaffichés.
-                <template #action>
-                    <a :href="create.url()" class="back-btn back-btn--primary">
-                        Créer un connecteur
-                    </a>
-                </template>
-            </BackEmptyState>
+            <Empty v-if="connectors.length === 0" class="border border-dashed">
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <CableIcon />
+                    </EmptyMedia>
+                    <EmptyTitle>Aucun connecteur</EmptyTitle>
+                    <EmptyDescription>
+                        Créez votre premier connecteur pour relier un service
+                        externe : ses credentials seront chiffrés au repos et
+                        jamais réaffichés.
+                    </EmptyDescription>
+                </EmptyHeader>
+                <EmptyContent>
+                    <Button as-child>
+                        <a :href="create.url()">Créer un connecteur</a>
+                    </Button>
+                </EmptyContent>
+            </Empty>
 
             <!-- Tableau -->
-            <div v-else class="back-card overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">
+            <div v-else class="overflow-hidden rounded-xl border">
+                <Table>
+                    <TableCaption class="sr-only">
                         Connecteurs : nom, type, statut, dernier test et actions
-                    </caption>
-                    <thead>
-                        <tr
-                            class="border-b border-[rgba(23,23,28,0.09)] text-xs font-medium tracking-wide text-[var(--color-muted)] uppercase"
-                        >
-                            <th scope="col" class="px-6 py-3">Connecteur</th>
-                            <th scope="col" class="px-6 py-3">Type</th>
-                            <th scope="col" class="px-6 py-3">Statut</th>
-                            <th scope="col" class="px-6 py-3">Dernier test</th>
-                            <th scope="col" class="px-6 py-3 text-right">
+                    </TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead
+                                class="px-4 text-xs tracking-wide uppercase"
+                            >
+                                Connecteur
+                            </TableHead>
+                            <TableHead
+                                class="px-4 text-xs tracking-wide uppercase"
+                            >
+                                Type
+                            </TableHead>
+                            <TableHead
+                                class="px-4 text-xs tracking-wide uppercase"
+                            >
+                                Statut
+                            </TableHead>
+                            <TableHead
+                                class="px-4 text-xs tracking-wide uppercase"
+                            >
+                                Dernier test
+                            </TableHead>
+                            <TableHead
+                                class="px-4 text-right text-xs tracking-wide uppercase"
+                            >
                                 Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
+                            </TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <TableRow
                             v-for="connector in connectors"
                             :key="connector.id"
-                            class="border-b border-[rgba(23,23,28,0.06)] last:border-b-0"
                         >
-                            <td class="px-6 py-4">
-                                <p class="font-medium text-[var(--color-ink)]">
+                            <TableCell class="px-4 py-4 align-top">
+                                <p class="font-medium">
                                     {{ connector.name }}
                                 </p>
                                 <p
-                                    class="mt-0.5 max-w-[18rem] truncate font-mono text-xs text-[var(--color-muted)]"
+                                    class="mt-0.5 max-w-[18rem] truncate font-mono text-xs text-muted-foreground"
                                     :title="connector.baseUrl"
                                 >
                                     {{ connector.baseUrl }}
                                 </p>
-                                <p
-                                    class="mt-0.5 text-xs text-[var(--color-muted)]"
-                                >
+                                <p class="mt-0.5 text-xs text-muted-foreground">
                                     Créé le
                                     {{ formatCreatedAt(connector.createdAt) }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="back-chip">
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
+                                <Badge variant="outline">
                                     {{ typeLabels[connector.type] }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <BackBadge
+                                </Badge>
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
+                                <Badge
                                     :variant="statusVariants[connector.status]"
                                 >
                                     {{ statusLabels[connector.status] }}
-                                </BackBadge>
+                                </Badge>
                                 <p
                                     v-if="connector.lastError !== null"
-                                    class="back-error mt-1 max-w-[16rem] truncate"
+                                    class="mt-1 max-w-[16rem] truncate text-xs text-destructive"
                                     :title="connector.lastError"
                                 >
                                     {{ connector.lastError }}
                                 </p>
-                            </td>
-                            <td class="px-6 py-4 text-[var(--color-ink)]">
+                            </TableCell>
+                            <TableCell class="px-4 py-4 align-top">
                                 {{ formatLastTested(connector.lastTestedAt) }}
-                            </td>
-                            <td class="px-6 py-4">
+                            </TableCell>
+                            <TableCell class="px-4 py-4 text-right align-top">
                                 <div
-                                    class="flex items-center justify-end gap-3"
+                                    class="flex items-center justify-end gap-2"
                                 >
-                                    <BackButton
-                                        :loading="testingId === connector.id"
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
                                         :disabled="
                                             testingId !== null &&
                                             testingId !== connector.id
                                         "
                                         @click="onTest(connector)"
                                     >
+                                        <Spinner
+                                            v-if="testingId === connector.id"
+                                            class="size-4"
+                                        />
                                         Tester la connexion
-                                    </BackButton>
+                                    </Button>
                                     <a
                                         :href="
                                             edit({
                                                 connector: connector.id,
                                             }).url
                                         "
-                                        class="back-link"
+                                        class="text-sm font-medium text-primary underline-offset-4 hover:underline"
                                     >
                                         Éditer
                                     </a>
-                                    <BackButton
-                                        variant="danger"
-                                        :loading="deletingId === connector.id"
-                                        :disabled="
-                                            deletingId !== null &&
-                                            deletingId !== connector.id
-                                        "
-                                        @click="onDestroy(connector)"
-                                    >
-                                        Supprimer
-                                    </BackButton>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger as-child>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                class="text-destructive hover:text-destructive"
+                                                :disabled="
+                                                    deletingId !== null &&
+                                                    deletingId !== connector.id
+                                                "
+                                            >
+                                                <Spinner
+                                                    v-if="
+                                                        deletingId ===
+                                                        connector.id
+                                                    "
+                                                    class="size-4"
+                                                />
+                                                Supprimer
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>
+                                                    Supprimer le connecteur «
+                                                    {{ connector.name }} » ?
+                                                </AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Ses credentials chiffrés
+                                                    seront définitivement
+                                                    effacés. Cette action est
+                                                    irréversible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>
+                                                    Annuler
+                                                </AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    class="bg-destructive text-white hover:bg-destructive/90"
+                                                    @click="
+                                                        onDestroy(connector)
+                                                    "
+                                                >
+                                                    Supprimer
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </TableCell>
+                        </TableRow>
+                    </TableBody>
+                </Table>
             </div>
-        </section>
+        </div>
     </BackLayout>
 </template>

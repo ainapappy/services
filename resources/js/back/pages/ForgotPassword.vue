@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import type { BackForgotPasswordPageProps } from '@/types';
 import { email } from '@/routes/password';
 import { login } from '@/routes';
 import BackAuthLayout from '../layouts/BackAuthLayout.vue';
-import BackButton from '../components/BackButton.vue';
-import BackField from '../components/BackField.vue';
-import BackInput from '../components/BackInput.vue';
-import BackLink from '../components/BackLink.vue';
-import BackStatus from '../components/BackStatus.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 defineProps<BackForgotPasswordPageProps>();
 </script>
@@ -20,19 +20,18 @@ defineProps<BackForgotPasswordPageProps>();
     >
         <Head title="Mot de passe oublié" />
 
-        <BackStatus v-if="status" tone="success">{{ status }}</BackStatus>
+        <Alert v-if="status" variant="success" role="status">
+            <AlertDescription>{{ status }}</AlertDescription>
+        </Alert>
 
         <Form
             v-bind="email.form()"
             v-slot="{ errors, processing }"
             class="flex flex-col gap-4"
         >
-            <BackField
-                label="Adresse e-mail"
-                field-id="email"
-                :error="errors.email"
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="email">Adresse e-mail</FieldLabel>
+                <Input
                     id="email"
                     type="email"
                     name="email"
@@ -41,15 +40,22 @@ defineProps<BackForgotPasswordPageProps>();
                     autocomplete="email"
                     placeholder="admin@example.com"
                 />
-            </BackField>
+                <FieldError
+                    :errors="errors.email ? [errors.email] : undefined"
+                />
+            </Field>
 
-            <BackButton type="submit" :loading="processing" class="w-full">
+            <Button type="submit" class="w-full" :disabled="processing">
+                <Spinner v-if="processing" class="size-4" />
                 Envoyer le lien de réinitialisation
-            </BackButton>
+            </Button>
         </Form>
 
-        <BackLink :href="login.url()" class="self-center text-sm">
+        <Link
+            :href="login.url()"
+            class="self-center text-sm text-muted-foreground underline-offset-4 hover:underline"
+        >
             Retour à la connexion
-        </BackLink>
+        </Link>
     </BackAuthLayout>
 </template>

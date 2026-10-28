@@ -3,9 +3,16 @@ import { Form, Head } from '@inertiajs/vue3';
 import type { BackResetPasswordPageProps } from '@/types';
 import { update } from '@/routes/password';
 import BackAuthLayout from '../layouts/BackAuthLayout.vue';
-import BackButton from '../components/BackButton.vue';
-import BackField from '../components/BackField.vue';
-import BackInput from '../components/BackInput.vue';
+import PasswordInput from '@/components/PasswordInput.vue';
+import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 const props = defineProps<BackResetPasswordPageProps>();
 </script>
@@ -25,53 +32,59 @@ const props = defineProps<BackResetPasswordPageProps>();
             v-slot="{ errors, processing }"
             class="flex flex-col gap-4"
         >
-            <BackField
-                label="Adresse e-mail"
-                field-id="email-display"
-                help="Compte concerné par la réinitialisation."
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="email-display">Adresse e-mail</FieldLabel>
+                <Input
                     id="email-display"
                     type="email"
                     :value="email"
                     readonly
                 />
-            </BackField>
+                <FieldDescription>
+                    Compte concerné par la réinitialisation.
+                </FieldDescription>
+            </Field>
 
-            <BackField
-                label="Nouveau mot de passe"
-                field-id="password"
-                :error="errors.password"
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="password">Nouveau mot de passe</FieldLabel>
+                <PasswordInput
                     id="password"
-                    type="password"
                     name="password"
                     required
-                    v-focus
+                    :autofocus="true"
                     autocomplete="new-password"
                     :passwordrules="passwordRules"
                 />
-            </BackField>
+                <FieldError
+                    :errors="errors.password ? [errors.password] : undefined"
+                />
+            </Field>
 
-            <BackField
-                label="Confirmation du mot de passe"
-                field-id="password_confirmation"
-                :error="errors.password_confirmation"
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="password_confirmation">
+                    Confirmation du mot de passe
+                </FieldLabel>
+                <PasswordInput
                     id="password_confirmation"
-                    type="password"
                     name="password_confirmation"
                     required
+                    :autofocus="false"
                     autocomplete="new-password"
                     :passwordrules="passwordRules"
                 />
-            </BackField>
+                <FieldError
+                    :errors="
+                        errors.password_confirmation
+                            ? [errors.password_confirmation]
+                            : undefined
+                    "
+                />
+            </Field>
 
-            <BackButton type="submit" :loading="processing" class="w-full">
+            <Button type="submit" class="w-full" :disabled="processing">
+                <Spinner v-if="processing" class="size-4" />
                 Réinitialiser le mot de passe
-            </BackButton>
+            </Button>
         </Form>
     </BackAuthLayout>
 </template>

@@ -3,18 +3,39 @@
 // url de base) puis champs de credentials ADAPTES au type choisi (mot de
 // passe d'application WordPress, cle/secret Caren et Erpen, JSON libre
 // Custom). Les credentials ne sont jamais rapatries : en edition, les
-// champs vident signifient « conserver l'existant » (placeholders bulles).
-// Aucun import hors arbre back/.
+// champs vides signifient « conserver l'existant » (placeholders bulles).
 import { Head, useForm } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
+import { EyeIcon, EyeOffIcon, ShieldCheckIcon } from '@lucide/vue';
 import type { BackConnectorsFormPageProps, ConnectorType } from '@/types';
 import { index, store, update } from '@/routes/admin/connectors';
 import BackLayout from '../../layouts/BackLayout.vue';
-import BackButton from '../../components/BackButton.vue';
-import BackCard from '../../components/BackCard.vue';
-import BackField from '../../components/BackField.vue';
-import BackInput from '../../components/BackInput.vue';
-import BackStatus from '../../components/BackStatus.vue';
+import BackPageHeader from '../../components/BackPageHeader.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 
 const props = defineProps<BackConnectorsFormPageProps>();
 
@@ -356,82 +377,102 @@ function onSubmit(): void {
             :title="isEdit ? 'Modifier le connecteur' : 'Nouveau connecteur'"
         />
 
-        <section class="flex flex-col gap-6">
-            <header class="flex flex-col gap-1">
-                <p class="text-sm text-[var(--color-muted)]">
-                    <a :href="index.url()" class="back-link"> Connecteurs </a>
-                    <span class="mx-1">/</span>
-                    <span>{{
-                        isEdit ? existing?.name : 'Nouveau connecteur'
-                    }}</span>
-                </p>
-                <h1
-                    class="text-xl font-semibold tracking-tight text-[var(--color-ink)]"
+        <div class="flex flex-col gap-6">
+            <p class="text-sm text-muted-foreground">
+                <a
+                    :href="index.url()"
+                    class="underline-offset-4 hover:text-foreground hover:underline"
                 >
-                    {{
-                        isEdit ? 'Modifier le connecteur' : 'Nouveau connecteur'
-                    }}
-                </h1>
-            </header>
+                    Connecteurs
+                </a>
+                <span class="mx-1">/</span>
+                <span class="text-foreground">
+                    {{ isEdit ? existing?.name : 'Nouveau connecteur' }}
+                </span>
+            </p>
+
+            <BackPageHeader
+                :title="
+                    isEdit ? 'Modifier le connecteur' : 'Nouveau connecteur'
+                "
+            />
 
             <form class="flex flex-col gap-6" @submit.prevent="onSubmit">
                 <!-- Identite -->
-                <BackCard
-                    title="Identité"
-                    description="Nom affiché dans le back-office, type d'intégration et adresse du service."
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackField
-                            label="Nom"
-                            field-id="name"
-                            :error="form.errors.name"
-                            help="Ex. Blog vitrine, Facturation Erpen."
-                        >
-                            <BackInput
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Identité</CardTitle>
+                        <CardDescription>
+                            Nom affiché dans le back-office, type d'intégration
+                            et adresse du service.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-6">
+                        <Field>
+                            <FieldLabel for="name">Nom</FieldLabel>
+                            <Input
                                 id="name"
                                 name="name"
                                 v-model="form.name"
                                 required
+                                autocomplete="off"
                                 placeholder="Ex. Blog vitrine"
                             />
-                        </BackField>
+                            <FieldDescription>
+                                Ex. Blog vitrine, Facturation Erpen.
+                            </FieldDescription>
+                            <FieldError
+                                :errors="
+                                    form.errors.name
+                                        ? [form.errors.name]
+                                        : undefined
+                                "
+                            />
+                        </Field>
 
-                        <BackField
-                            label="Type"
-                            field-id="type"
-                            :error="form.errors.type"
-                            help="Les champs de credentials s'adaptent au type choisi."
-                        >
-                            <select
-                                id="type"
-                                name="type"
-                                v-model="form.type"
-                                class="back-input back-select"
+                        <Field>
+                            <FieldLabel for="type">Type</FieldLabel>
+                            <Select
+                                :model-value="form.type"
+                                @update:model-value="
+                                    (value) =>
+                                        (form.type = value as ConnectorType)
+                                "
                             >
-                                <option
-                                    v-for="option in typeOptions"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ option.label }}
-                                </option>
-                            </select>
-                            <p class="back-help mt-1">
+                                <SelectTrigger id="type" class="w-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem
+                                        v-for="option in typeOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FieldDescription>
+                                Les champs de credentials s'adaptent au type
+                                choisi :
                                 {{
                                     typeOptions.find(
                                         (option) => option.value === form.type,
                                     )?.description
                                 }}
-                            </p>
-                        </BackField>
+                            </FieldDescription>
+                            <FieldError
+                                :errors="
+                                    form.errors.type
+                                        ? [form.errors.type]
+                                        : undefined
+                                "
+                            />
+                        </Field>
 
-                        <BackField
-                            label="URL de base"
-                            field-id="base_url"
-                            :error="form.errors.base_url"
-                            help="Le test de connexion pingue cette adresse."
-                        >
-                            <BackInput
+                        <Field>
+                            <FieldLabel for="base_url">URL de base</FieldLabel>
+                            <Input
                                 id="base_url"
                                 name="base_url"
                                 type="url"
@@ -439,42 +480,56 @@ function onSubmit(): void {
                                 required
                                 placeholder="https://exemple.com"
                             />
-                        </BackField>
-                    </div>
-                </BackCard>
+                            <FieldDescription>
+                                Le test de connexion pingue cette adresse.
+                            </FieldDescription>
+                            <FieldError
+                                :errors="
+                                    form.errors.base_url
+                                        ? [form.errors.base_url]
+                                        : undefined
+                                "
+                            />
+                        </Field>
+                    </CardContent>
+                </Card>
 
                 <!-- Credentials : champs adaptes au type -->
-                <BackCard
-                    title="Credentials"
-                    :description="
-                        isEdit
-                            ? 'Les credentials actuels ne sont jamais réaffichés.'
-                            : 'Champs adaptés au type de connecteur.'
-                    "
-                >
-                    <div class="flex flex-col gap-5">
-                        <BackStatus>
-                            Les credentials sont chiffrés au repos et jamais
-                            réaffichés : le serveur ne les renvoie jamais au
-                            navigateur.
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Credentials</CardTitle>
+                        <CardDescription>
+                            {{
+                                isEdit
+                                    ? 'Les credentials actuels ne sont jamais réaffichés.'
+                                    : 'Champs adaptés au type de connecteur.'
+                            }}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent class="flex flex-col gap-6">
+                        <Alert>
+                            <ShieldCheckIcon />
+                            <AlertDescription>
+                                Les credentials sont chiffrés au repos et jamais
+                                réaffichés : le serveur ne les renvoie jamais au
+                                navigateur.
 
-                            <template v-if="isEdit">
-                                Laissez les champs vides pour conserver les
-                                credentials actuels, ou saisissez de nouvelles
-                                valeurs pour les remplacer.
-                            </template>
-                        </BackStatus>
+                                <template v-if="isEdit">
+                                    Laissez les champs vides pour conserver les
+                                    credentials actuels, ou saisissez de
+                                    nouvelles valeurs pour les remplacer.
+                                </template>
+                            </AlertDescription>
+                        </Alert>
 
                         <!-- WordPress : nom d'utilisateur + mot de passe
                              d'application -->
                         <template v-if="form.type === 'wordpress'">
-                            <BackField
-                                label="Nom d'utilisateur"
-                                field-id="username"
-                                :error="credentialError('username')"
-                                :help="usernameHelp"
-                            >
-                                <BackInput
+                            <Field>
+                                <FieldLabel for="username">
+                                    Nom d'utilisateur
+                                </FieldLabel>
+                                <Input
                                     id="username"
                                     name="username"
                                     v-model="form.username"
@@ -484,23 +539,31 @@ function onSubmit(): void {
                                         isEdit ? '••••••••' : 'Ex. admin'
                                     "
                                 />
-                            </BackField>
+                                <FieldDescription>
+                                    {{ usernameHelp }}
+                                </FieldDescription>
+                                <FieldError
+                                    :errors="
+                                        credentialError('username')
+                                            ? [credentialError('username')!]
+                                            : undefined
+                                    "
+                                />
+                            </Field>
 
-                            <BackField
-                                label="Mot de passe d'application"
-                                field-id="password"
-                                :error="credentialError('password')"
-                                :help="passwordHelp"
-                            >
+                            <Field>
+                                <FieldLabel for="password">
+                                    Mot de passe d'application
+                                </FieldLabel>
                                 <div class="relative">
-                                    <BackInput
+                                    <Input
                                         id="password"
                                         name="password"
                                         v-model="form.password"
                                         :type="
                                             showPassword ? 'text' : 'password'
                                         "
-                                        class="back-input--secret"
+                                        class="pr-10"
                                         :required="!isEdit"
                                         autocomplete="new-password"
                                         :placeholder="
@@ -509,7 +572,7 @@ function onSubmit(): void {
                                     />
                                     <button
                                         type="button"
-                                        class="back-secret-toggle"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                                         :aria-pressed="showPassword"
                                         :aria-label="
                                             showPassword
@@ -518,14 +581,24 @@ function onSubmit(): void {
                                         "
                                         @click="showPassword = !showPassword"
                                     >
-                                        {{
-                                            showPassword
-                                                ? 'Masquer'
-                                                : 'Afficher'
-                                        }}
+                                        <EyeOffIcon
+                                            v-if="showPassword"
+                                            class="size-4"
+                                        />
+                                        <EyeIcon v-else class="size-4" />
                                     </button>
                                 </div>
-                            </BackField>
+                                <FieldDescription>
+                                    {{ passwordHelp }}
+                                </FieldDescription>
+                                <FieldError
+                                    :errors="
+                                        credentialError('password')
+                                            ? [credentialError('password')!]
+                                            : undefined
+                                    "
+                                />
+                            </Field>
                         </template>
 
                         <!-- Caren / Erpen : cle API + secret -->
@@ -534,19 +607,15 @@ function onSubmit(): void {
                                 form.type === 'caren' || form.type === 'erpen'
                             "
                         >
-                            <BackField
-                                label="Clé API"
-                                field-id="api_key"
-                                :error="credentialError('api_key')"
-                                :help="apiKeyHelp"
-                            >
+                            <Field>
+                                <FieldLabel for="api_key">Clé API</FieldLabel>
                                 <div class="relative">
-                                    <BackInput
+                                    <Input
                                         id="api_key"
                                         name="api_key"
                                         v-model="form.api_key"
                                         :type="showApiKey ? 'text' : 'password'"
-                                        class="back-input--secret"
+                                        class="pr-10"
                                         :required="!isEdit"
                                         autocomplete="off"
                                         :placeholder="
@@ -555,7 +624,7 @@ function onSubmit(): void {
                                     />
                                     <button
                                         type="button"
-                                        class="back-secret-toggle"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                                         :aria-pressed="showApiKey"
                                         :aria-label="
                                             showApiKey
@@ -564,26 +633,34 @@ function onSubmit(): void {
                                         "
                                         @click="showApiKey = !showApiKey"
                                     >
-                                        {{
-                                            showApiKey ? 'Masquer' : 'Afficher'
-                                        }}
+                                        <EyeOffIcon
+                                            v-if="showApiKey"
+                                            class="size-4"
+                                        />
+                                        <EyeIcon v-else class="size-4" />
                                     </button>
                                 </div>
-                            </BackField>
+                                <FieldDescription>
+                                    {{ apiKeyHelp }}
+                                </FieldDescription>
+                                <FieldError
+                                    :errors="
+                                        credentialError('api_key')
+                                            ? [credentialError('api_key')!]
+                                            : undefined
+                                    "
+                                />
+                            </Field>
 
-                            <BackField
-                                label="Secret"
-                                field-id="secret"
-                                :error="credentialError('secret')"
-                                :help="secretHelp"
-                            >
+                            <Field>
+                                <FieldLabel for="secret">Secret</FieldLabel>
                                 <div class="relative">
-                                    <BackInput
+                                    <Input
                                         id="secret"
                                         name="secret"
                                         v-model="form.secret"
                                         :type="showSecret ? 'text' : 'password'"
-                                        class="back-input--secret"
+                                        class="pr-10"
                                         :required="!isEdit"
                                         autocomplete="new-password"
                                         :placeholder="
@@ -592,7 +669,7 @@ function onSubmit(): void {
                                     />
                                     <button
                                         type="button"
-                                        class="back-secret-toggle"
+                                        class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                                         :aria-pressed="showSecret"
                                         :aria-label="
                                             showSecret
@@ -601,52 +678,74 @@ function onSubmit(): void {
                                         "
                                         @click="showSecret = !showSecret"
                                     >
-                                        {{
-                                            showSecret ? 'Masquer' : 'Afficher'
-                                        }}
+                                        <EyeOffIcon
+                                            v-if="showSecret"
+                                            class="size-4"
+                                        />
+                                        <EyeIcon v-else class="size-4" />
                                     </button>
                                 </div>
-                            </BackField>
+                                <FieldDescription>
+                                    {{ secretHelp }}
+                                </FieldDescription>
+                                <FieldError
+                                    :errors="
+                                        credentialError('secret')
+                                            ? [credentialError('secret')!]
+                                            : undefined
+                                    "
+                                />
+                            </Field>
                         </template>
 
                         <!-- Custom : JSON libre valide cote client -->
                         <template v-else>
-                            <BackField
-                                label="Credentials (JSON)"
-                                field-id="credentials_json"
-                                :error="
-                                    serverErrors.credentials ??
-                                    serverErrors.credentials_json
-                                "
-                                :help="jsonHelp"
-                            >
-                                <textarea
+                            <Field>
+                                <FieldLabel for="credentials_json">
+                                    Credentials (JSON)
+                                </FieldLabel>
+                                <Textarea
                                     id="credentials_json"
                                     name="credentials_json"
                                     v-model="form.credentials_json"
-                                    class="back-input back-textarea"
+                                    class="min-h-24 font-mono text-sm"
                                     spellcheck="false"
                                     :placeholder="jsonPlaceholder"
                                 />
-                            </BackField>
+                                <FieldDescription>
+                                    {{ jsonHelp }}
+                                </FieldDescription>
+                                <FieldError
+                                    :errors="
+                                        (serverErrors.credentials ??
+                                        serverErrors.credentials_json)
+                                            ? [
+                                                  serverErrors.credentials ??
+                                                      serverErrors.credentials_json,
+                                              ]
+                                            : undefined
+                                    "
+                                />
+                            </Field>
                         </template>
-                    </div>
-                </BackCard>
+                    </CardContent>
+                </Card>
 
                 <!-- Actions -->
-                <div class="flex items-center justify-end gap-3">
-                    <a :href="index.url()" class="back-btn back-btn--secondary">
-                        Annuler
-                    </a>
-                    <BackButton type="submit" :loading="form.processing">
+                <div class="flex items-center justify-end gap-2">
+                    <Button as-child variant="outline">
+                        <a :href="index.url()">Annuler</a>
+                    </Button>
+                    <Button type="submit" :disabled="form.processing">
+                        <Spinner v-if="form.processing" class="size-4" />
                         {{
                             isEdit
                                 ? 'Enregistrer les modifications'
                                 : 'Créer le connecteur'
                         }}
-                    </BackButton>
+                    </Button>
                 </div>
             </form>
-        </section>
+        </div>
     </BackLayout>
 </template>

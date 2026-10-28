@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import type { BackVerifyEmailPageProps } from '@/types';
 import { send } from '@/routes/verification';
 import { logout } from '@/routes';
 import BackAuthLayout from '../layouts/BackAuthLayout.vue';
-import BackButton from '../components/BackButton.vue';
-import BackLink from '../components/BackLink.vue';
-import BackStatus from '../components/BackStatus.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field';
+import { Spinner } from '@/components/ui/spinner';
 
 defineProps<BackVerifyEmailPageProps>();
 </script>
@@ -18,10 +19,16 @@ defineProps<BackVerifyEmailPageProps>();
     >
         <Head title="Vérification de l'adresse e-mail" />
 
-        <BackStatus v-if="status === 'verification-link-sent'" tone="success">
-            Un nouveau lien de vérification vient de partir vers votre adresse
-            e-mail.
-        </BackStatus>
+        <Alert
+            v-if="status === 'verification-link-sent'"
+            variant="success"
+            role="status"
+        >
+            <AlertDescription>
+                Un nouveau lien de vérification vient de partir vers votre
+                adresse e-mail.
+            </AlertDescription>
+        </Alert>
 
         <div class="flex flex-col items-center gap-4">
             <Form
@@ -29,22 +36,28 @@ defineProps<BackVerifyEmailPageProps>();
                 v-slot="{ errors, processing }"
                 class="flex w-full flex-col items-center gap-2"
             >
-                <BackButton
+                <Button
                     type="submit"
                     variant="secondary"
-                    :loading="processing"
+                    class="w-full"
+                    :disabled="processing"
                 >
+                    <Spinner v-if="processing" class="size-4" />
                     Renvoyer le lien de vérification
-                </BackButton>
+                </Button>
 
-                <p v-if="errors.email" class="back-error">
-                    {{ errors.email }}
-                </p>
+                <FieldError
+                    :errors="errors.email ? [errors.email] : undefined"
+                />
             </Form>
 
-            <BackLink :href="logout.url()" method="post" class="text-sm">
+            <Link
+                :href="logout.url()"
+                method="post"
+                class="text-sm text-muted-foreground underline-offset-4 hover:underline"
+            >
                 Se déconnecter
-            </BackLink>
+            </Link>
         </div>
     </BackAuthLayout>
 </template>

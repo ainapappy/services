@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link } from '@inertiajs/vue3';
 import type { BackLoginPageProps } from '@/types';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 import BackAuthLayout from '../layouts/BackAuthLayout.vue';
-import BackButton from '../components/BackButton.vue';
-import BackField from '../components/BackField.vue';
-import BackInput from '../components/BackInput.vue';
-import BackLink from '../components/BackLink.vue';
-import BackStatus from '../components/BackStatus.vue';
+import PasswordInput from '@/components/PasswordInput.vue';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 
 defineProps<BackLoginPageProps>();
 </script>
@@ -20,7 +22,9 @@ defineProps<BackLoginPageProps>();
     >
         <Head title="Connexion" />
 
-        <BackStatus v-if="status" tone="info">{{ status }}</BackStatus>
+        <Alert v-if="status" variant="success" role="status">
+            <AlertDescription>{{ status }}</AlertDescription>
+        </Alert>
 
         <Form
             v-bind="store.form()"
@@ -28,12 +32,9 @@ defineProps<BackLoginPageProps>();
             v-slot="{ errors, processing }"
             class="flex flex-col gap-4"
         >
-            <BackField
-                label="Adresse e-mail"
-                field-id="email"
-                :error="errors.email"
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="email">Adresse e-mail</FieldLabel>
+                <Input
                     id="email"
                     type="email"
                     name="email"
@@ -42,45 +43,45 @@ defineProps<BackLoginPageProps>();
                     autocomplete="email"
                     placeholder="admin@example.com"
                 />
-            </BackField>
+                <FieldError
+                    :errors="errors.email ? [errors.email] : undefined"
+                />
+            </Field>
 
-            <BackField
-                label="Mot de passe"
-                field-id="password"
-                :error="errors.password"
-            >
-                <BackInput
+            <Field>
+                <FieldLabel for="password">Mot de passe</FieldLabel>
+                <PasswordInput
                     id="password"
-                    type="password"
                     name="password"
                     required
+                    :autofocus="false"
                     autocomplete="current-password"
                     placeholder="••••••••"
                 />
-                <BackLink
-                    v-if="canResetPassword"
-                    :href="request.url()"
-                    class="self-end text-xs"
-                >
-                    Mot de passe oublié ?
-                </BackLink>
-            </BackField>
-
-            <label
-                class="flex items-center gap-2.5 text-sm text-[var(--color-ink)]"
-            >
-                <input
-                    id="remember"
-                    name="remember"
-                    type="checkbox"
-                    class="back-checkbox"
+                <FieldError
+                    :errors="errors.password ? [errors.password] : undefined"
                 />
-                <span>Se souvenir de moi</span>
-            </label>
+            </Field>
 
-            <BackButton type="submit" :loading="processing" class="mt-1 w-full">
+            <Link
+                v-if="canResetPassword"
+                :href="request.url()"
+                class="self-end text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
+                Mot de passe oublié ?
+            </Link>
+
+            <Field orientation="horizontal">
+                <Checkbox id="remember" name="remember" />
+                <FieldLabel for="remember" class="font-normal">
+                    Se souvenir de moi
+                </FieldLabel>
+            </Field>
+
+            <Button type="submit" class="mt-1 w-full" :disabled="processing">
+                <Spinner v-if="processing" class="size-4" />
                 Se connecter
-            </BackButton>
+            </Button>
         </Form>
     </BackAuthLayout>
 </template>
