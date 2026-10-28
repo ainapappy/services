@@ -284,7 +284,7 @@ function onSecretCopied(): void {
                                 v-model="form.url"
                                 required
                                 autocomplete="off"
-                                placeholder="https://exemple.com/webhooks/devtoolbox"
+                                placeholder="https://exemple.com/webhooks/services"
                             />
                         </BackField>
 

@@ -15,7 +15,7 @@ const year = new Date().getFullYear();
                 <p
                     class="text-sm font-semibold tracking-tight text-[var(--color-ink)]"
                 >
-                    DevToolbox
+                    Services
                 </p>
                 <nav
                     class="flex items-center gap-6 text-sm"
@@ -48,7 +48,7 @@ const year = new Date().getFullYear();
             <div
                 class="mx-auto w-full max-w-5xl px-6 py-5 text-xs text-[var(--color-muted)]"
             >
-                DevToolbox — Tous droits réservés {{ year }}.
+                Services — Tous droits réservés {{ year }}.
             </div>
         </footer>
     </div>

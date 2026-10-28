@@ -9,7 +9,7 @@ import { vReveal } from '../directives/reveal';
 // la page (front.css est charge par les pages front, pas par le bundle global).
 import '../../../css/front.css';
 
-const appName = import.meta.env.VITE_APP_NAME || 'DevToolbox';
+const appName = import.meta.env.VITE_APP_NAME || 'Services';
 </script>
 
 <template>

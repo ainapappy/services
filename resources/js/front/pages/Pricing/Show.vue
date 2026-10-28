@@ -16,7 +16,7 @@ import '../../../../css/front.css';
 
 const props = defineProps<FrontPricingShowPageProps>();
 
-const appName = import.meta.env.VITE_APP_NAME || 'DevToolbox';
+const appName = import.meta.env.VITE_APP_NAME || 'Services';
 
 const landingUrl = home.url();
 const pricingUrl = pricing.url();

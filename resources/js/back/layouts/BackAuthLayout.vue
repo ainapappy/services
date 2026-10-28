@@ -17,7 +17,7 @@ defineProps<{
                 <p
                     class="text-sm font-semibold tracking-tight text-[var(--color-ink)]"
                 >
-                    DevToolbox
+                    Services
                 </p>
                 <p class="text-xs text-[var(--color-muted)]">Back-office</p>
             </div>

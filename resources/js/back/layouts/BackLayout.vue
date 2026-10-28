@@ -254,7 +254,7 @@ function onLogout(): void {
         <aside class="flex w-60 shrink-0 flex-col bg-[var(--color-ink)]">
             <div class="px-6 pt-6 pb-4">
                 <p class="text-sm font-semibold tracking-wide text-white">
-                    DevToolbox
+                    Services
                 </p>
                 <p class="mt-0.5 text-xs text-white/40">Administration</p>
             </div>
@@ -304,7 +304,7 @@ function onLogout(): void {
             </nav>
 
             <p class="px-6 py-4 text-xs text-white/40">
-                Back-office DevToolbox
+                Back-office Services
             </p>
         </aside>
 

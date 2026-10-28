@@ -16,7 +16,7 @@ import '../../../css/back.css';
             <p
                 class="text-sm font-semibold tracking-tight text-[var(--color-ink)]"
             >
-                DevToolbox
+                Services
                 <span class="font-normal text-[var(--color-muted)]">
                     · Back-office
                 </span>

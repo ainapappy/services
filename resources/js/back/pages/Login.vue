@@ -16,7 +16,7 @@ defineProps<BackLoginPageProps>();
 <template>
     <BackAuthLayout
         title="Connexion"
-        description="Accédez au back-office DevToolbox."
+        description="Accédez au back-office Services."
     >
         <Head title="Connexion" />
 

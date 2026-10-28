@@ -16,7 +16,7 @@ import '../../../../css/front.css';
 
 const props = defineProps<FrontLandingShowPageProps>();
 
-const appName = import.meta.env.VITE_APP_NAME || 'DevToolbox';
+const appName = import.meta.env.VITE_APP_NAME || 'Services';
 
 const prefersReducedMotion = (): boolean =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
