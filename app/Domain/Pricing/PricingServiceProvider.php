@@ -2,6 +2,12 @@
 
 namespace App\Domain\Pricing;
 
+use App\Domain\Pricing\Models\PricingPlan;
+use App\Domain\Pricing\Models\PricingTable;
+use App\Domain\Pricing\Policies\PricingPlanPolicy;
+use App\Domain\Pricing\Policies\PricingTablePolicy;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class PricingServiceProvider extends ServiceProvider
@@ -17,11 +23,16 @@ class PricingServiceProvider extends ServiceProvider
     /**
      * Bootstrap any domain services.
      *
-     * Domain routes will be declared here in later phases, wrapped in the
-     * "module:pricing" middleware.
+     * The back-office routes live in the domain; the public "/pricing" page
+     * stays in routes/web.php, before the "/{slug}" capture route which must
+     * be registered after every static route.
      */
     public function boot(): void
     {
-        //
+        Gate::policy(PricingPlan::class, PricingPlanPolicy::class);
+        Gate::policy(PricingTable::class, PricingTablePolicy::class);
+
+        Route::middleware('web')
+            ->group(__DIR__.'/routes/web.php');
     }
 }

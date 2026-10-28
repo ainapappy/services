@@ -5,6 +5,13 @@ import type {
     LandingShow,
 } from './landing';
 import type { Module, SharedModule } from './module';
+import type {
+    PricingPlan,
+    PricingPlanOption,
+    PricingShow,
+    PricingTableForm,
+    PricingTableListItem,
+} from './pricing';
 
 /**
  * Props partagees par toutes les pages Inertia, telles que sérialisées par
@@ -30,6 +37,32 @@ export type BackLandingIndexPageProps = AppSharedProps & {
 /** Props de la page `back/Landing/Form` (création et édition). */
 export type BackLandingFormPageProps = AppSharedProps & {
     landingPage?: LandingPageForm;
+};
+
+/** Props de la page `front/Pricing/Show` (page tarifs publique). */
+export type FrontPricingShowPageProps = AppSharedProps & {
+    table: PricingShow;
+};
+
+/** Props de la page `back/Pricing/Plans` (liste des plans tarifaires). */
+export type BackPricingPlansPageProps = AppSharedProps & {
+    plans: PricingPlan[];
+};
+
+/** Props de la page `back/Pricing/PlanForm` (création et édition). */
+export type BackPricingPlanFormPageProps = AppSharedProps & {
+    plan?: PricingPlan;
+};
+
+/** Props de la page `back/Pricing/Tables` (liste des tables de prix). */
+export type BackPricingTablesPageProps = AppSharedProps & {
+    tables: PricingTableListItem[];
+};
+
+/** Props de la page `back/Pricing/TableForm` (création et édition). */
+export type BackPricingTableFormPageProps = AppSharedProps & {
+    table?: PricingTableForm;
+    plans: PricingPlanOption[];
 };
 
 /** Props de la page `back/Login` (écran de connexion Fortify). */

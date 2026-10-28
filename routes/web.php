@@ -1,6 +1,7 @@
 <?php
 
 use App\Domain\Landing\Http\Controllers\Front\LandingPageController;
+use App\Domain\Pricing\Http\Controllers\Front\PricingPageController;
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -16,6 +17,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [LandingPageController::class, 'home'])
     ->middleware('module:landing')
     ->name('home');
+
+Route::get('pricing', [PricingPageController::class, 'show'])
+    ->middleware('module:pricing')
+    ->name('pricing');
 
 // Public registration is disabled: an explicit, clear message is shown on
 // the login screen instead of an account creation form.

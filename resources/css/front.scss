@@ -930,6 +930,440 @@ body {
 }
 
 /* --------------------------------------------------------------------------
+   Page tarifs (module Pricing) - retranscription de pricing.html
+   -------------------------------------------------------------------------- */
+
+/* Lien courant de la navigation (page tarifs). */
+.front-links a.is-active {
+    color: var(--front-accent-strong);
+}
+
+/* Heros centre du prototype tarifs : glow unique anime au-dessus du titre. */
+.front-hero--pricing {
+    padding: 5rem 0 2.5rem;
+    text-align: center;
+}
+
+.front-hero--pricing .front-lead {
+    margin-inline: auto;
+}
+
+.front-glow--top {
+    animation: front-drift 18s ease-in-out infinite alternate;
+    background: rgba(99, 102, 241, 0.26);
+    height: 520px;
+    left: 50%;
+    margin-left: -260px;
+    top: -220px;
+    width: 520px;
+}
+
+/* Switch mensuel / annuel : pouce glissant, deux boutons radios accessibles. */
+.front-switch-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.2rem;
+}
+
+.front-switch {
+    background: var(--color-surface);
+    border: 1px solid var(--front-border);
+    border-radius: 999px;
+    display: inline-flex;
+    padding: 4px;
+    position: relative;
+}
+
+.front-switch-thumb {
+    background: linear-gradient(
+        135deg,
+        var(--color-accent),
+        var(--color-accent-2)
+    );
+    border-radius: 999px;
+    bottom: 4px;
+    box-shadow: var(--front-shadow-glow);
+    left: 4px;
+    position: absolute;
+    top: 4px;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: calc(50% - 4px);
+}
+
+.front-switch--annual .front-switch-thumb {
+    transform: translateX(100%);
+}
+
+.front-switch-option {
+    align-items: center;
+    background: none;
+    border: 0;
+    border-radius: 999px;
+    color: var(--color-muted);
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 600;
+    gap: 0.5rem;
+    padding: 0.55rem 1.5rem;
+    position: relative;
+    transition: color 0.25s;
+    z-index: 1;
+}
+
+.front-switch-option.on {
+    color: #fff;
+}
+
+.front-switch-option:focus-within {
+    outline: 2px solid var(--front-accent-strong);
+    outline-offset: 2px;
+}
+
+/* Ancre d'economie annuelle du switch. */
+.front-badge-save {
+    background: rgba(16, 185, 129, 0.12);
+    border-radius: 999px;
+    color: #059669;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.12rem 0.5rem;
+}
+
+.front-switch-option.on .front-badge-save {
+    background: rgba(255, 255, 255, 0.22);
+    color: #fff;
+}
+
+/* Cartes plans. */
+.front-plans {
+    padding: 3.2rem 0 2rem;
+}
+
+.front-plans-grid {
+    align-items: stretch;
+    display: grid;
+    gap: 1.4rem;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.front-plans-empty {
+    color: var(--color-muted);
+    padding: 2.5rem 0;
+    text-align: center;
+}
+
+.front-plan {
+    background: var(--color-surface);
+    border: 1px solid var(--front-border);
+    border-radius: 22px;
+    display: flex;
+    flex-direction: column;
+    padding: 2.1rem 1.9rem;
+    position: relative;
+    transition:
+        box-shadow 0.28s ease,
+        transform 0.28s ease;
+}
+
+.front-plan:hover {
+    box-shadow: var(--front-shadow-md);
+    transform: translateY(-6px);
+}
+
+@media (max-width: 920px) {
+    .front-plans-grid {
+        grid-template-columns: 1fr;
+        margin-inline: auto;
+        max-width: 440px;
+    }
+}
+
+.front-plan--popular {
+    box-shadow: var(--front-shadow-md);
+}
+
+@media (min-width: 921px) {
+    .front-plan--popular {
+        transform: scale(1.035);
+    }
+
+    .front-plan--popular:hover {
+        transform: scale(1.035) translateY(-6px);
+    }
+}
+
+/* Bordure degradee rotative du plan « populaire » : @property enregistre
+   --ang comme angle, sinon l'animation de la variable ne s'interpole pas. */
+@property --ang {
+    initial-value: 0deg;
+    inherits: false;
+    syntax: '<angle>';
+}
+
+@keyframes front-ang-spin {
+    to {
+        --ang: 360deg;
+    }
+}
+
+.front-plan--popular::before {
+    animation: front-ang-spin 6s linear infinite;
+    background: conic-gradient(
+        from var(--ang, 0deg),
+        var(--color-accent),
+        var(--color-accent-2),
+        #22d3ee,
+        var(--color-accent)
+    );
+    border-radius: 23px;
+    content: '';
+    inset: -1.5px;
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    padding: 1.5px;
+    pointer-events: none;
+    position: absolute;
+}
+
+.front-tag-popular {
+    background: linear-gradient(
+        135deg,
+        var(--color-accent),
+        var(--color-accent-2)
+    );
+    border-radius: 999px;
+    box-shadow: var(--front-shadow-glow);
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    left: 50%;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.9rem;
+    position: absolute;
+    text-transform: uppercase;
+    top: -13px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.front-plan h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.front-plan-desc {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.front-price {
+    align-items: baseline;
+    display: flex;
+    gap: 0.35rem;
+    margin: 1.4rem 0 0.2rem;
+}
+
+.front-price .cur {
+    color: var(--color-muted);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* Montant : la bascule mensuel / annuel l'eteint puis le fait reapparaitre. */
+.front-price-amount {
+    display: inline-block;
+    font-size: 3rem;
+    font-weight: 760;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+.front-price-amount--swap {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+}
+
+.front-price-per {
+    color: var(--color-muted);
+    font-size: 0.95rem;
+}
+
+.front-bill-note {
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    min-height: 1.2em;
+    transition: opacity 0.18s;
+}
+
+.front-bill-note--swap {
+    opacity: 0;
+}
+
+.front-plan-features {
+    flex: 1;
+    list-style: none;
+    margin-top: 1.5rem;
+}
+
+.front-plan-features li {
+    align-items: flex-start;
+    color: #3f3f46;
+    display: flex;
+    font-size: 0.94rem;
+    gap: 0.65rem;
+    padding: 0.42rem 0;
+}
+
+.front-plan-features li::before {
+    background: var(--front-accent-soft)
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%234f46e5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>')
+        center/10px no-repeat;
+    border-radius: 50%;
+    content: '';
+    flex: none;
+    height: 18px;
+    margin-top: 0.12rem;
+    width: 18px;
+}
+
+.front-plan-cta {
+    justify-content: center;
+    margin-top: 1.6rem;
+    width: 100%;
+}
+
+/* Section « inclus ». */
+.front-includes {
+    padding: 3.5rem 0 1rem;
+}
+
+.front-includes h2 {
+    font-size: 1.5rem;
+    font-weight: 720;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.front-includes-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.front-inc {
+    align-items: center;
+    background: var(--color-surface);
+    border: 1px solid var(--front-border);
+    border-radius: 14px;
+    display: flex;
+    font-size: 0.94rem;
+    font-weight: 500;
+    gap: 0.8rem;
+    padding: 1rem 1.2rem;
+    transition:
+        border-color 0.25s,
+        transform 0.25s;
+}
+
+.front-inc:hover {
+    border-color: rgba(99, 102, 241, 0.35);
+    transform: translateY(-3px);
+}
+
+.front-inc svg {
+    color: var(--front-accent-strong);
+    flex: none;
+}
+
+/* FAQ accordéon. */
+.front-faq {
+    margin-inline: auto;
+    max-width: 720px;
+    padding: 4rem 0 2rem;
+}
+
+.front-faq h2 {
+    font-size: 1.5rem;
+    font-weight: 720;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.front-faq-item {
+    background: var(--color-surface);
+    border: 1px solid var(--front-border);
+    border-radius: 14px;
+    margin-bottom: 0.7rem;
+    transition: border-color 0.25s;
+}
+
+.front-faq-item--open {
+    border-color: rgba(99, 102, 241, 0.35);
+}
+
+.front-faq-q {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--color-ink);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: 0.98rem;
+    font-weight: 600;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 1.05rem 1.3rem;
+    text-align: left;
+    width: 100%;
+}
+
+.front-faq-q::after {
+    border-bottom: 2px solid var(--color-muted);
+    border-right: 2px solid var(--color-muted);
+    content: '';
+    flex: none;
+    height: 9px;
+    transform: rotate(45deg);
+    transition: transform 0.3s;
+    width: 9px;
+}
+
+.front-faq-q[aria-expanded='true']::after {
+    transform: rotate(225deg);
+}
+
+.front-faq-q:focus-visible {
+    border-radius: 14px;
+    outline: 2px solid var(--front-accent-strong);
+    outline-offset: -2px;
+}
+
+.front-faq-a {
+    padding: 0 1.3rem 1.15rem;
+}
+
+.front-faq-a p {
+    color: var(--color-muted);
+    font-size: 0.94rem;
+}
+
+/* --------------------------------------------------------------------------
    Mouvement reduit : animations coupees, contenu visible immediatement
    -------------------------------------------------------------------------- */
 
@@ -943,19 +1377,29 @@ body {
     .front-card,
     .front-console,
     .front-links a,
-    .front-foot a:not(.front-brand) {
+    .front-foot a:not(.front-brand),
+    .front-switch-thumb,
+    .front-switch-option,
+    .front-price-amount,
+    .front-bill-note,
+    .front-plan,
+    .front-inc,
+    .front-faq-item,
+    .front-faq-q::after {
         transition: none;
     }
 
     .front-glow--a,
     .front-glow--b,
+    .front-glow--top,
     .front-eyebrow .dot,
     .badge-live .pulse,
     .front-hero-visual,
     .front-chip--a,
     .front-chip--b,
     .front-bars span,
-    .front-marquee-track {
+    .front-marquee-track,
+    .front-plan--popular::before {
         animation: none;
     }
 

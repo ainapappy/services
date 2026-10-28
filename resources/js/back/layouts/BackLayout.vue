@@ -8,6 +8,7 @@ import type { AppSharedProps } from '@/types';
 import { dashboard } from '@/routes/admin';
 import { index as landingIndex } from '@/routes/admin/landing';
 import { index as modulesIndex } from '@/routes/admin/modules';
+import { index as pricingPlansIndex } from '@/routes/admin/pricing/plans';
 import { edit as profileEdit } from '@/routes/admin/profile';
 import { logout } from '@/routes';
 import '../../../css/back.scss';
@@ -65,7 +66,35 @@ const landingEnabled = computed(
             ?.enabled ?? false,
 );
 
-const landingIndexUrl = landingIndex.url();
+const pricingEnabled = computed(
+    () =>
+        page.props.modules.find((module) => module.slug === 'pricing')
+            ?.enabled ?? false,
+);
+
+/* Liens des modules metier reellement actives : une entree sans lien reste
+   grise (« a venir »). Pricing pointe vers la liste des plans ; les tables
+   de prix sont atteignables depuis cet ecran. */
+const enabledModuleHrefs = computed<Record<string, string>>(() => {
+    const hrefs: Record<string, string> = {};
+
+    if (landingEnabled.value) {
+        hrefs.landing = landingIndex.url();
+    }
+
+    if (pricingEnabled.value) {
+        hrefs.pricing = pricingPlansIndex.url();
+    }
+
+    return hrefs;
+});
+
+const moduleNav = computed(() =>
+    moduleCatalog.map((module) => ({
+        ...module,
+        href: enabledModuleHrefs.value[module.slug] ?? null,
+    })),
+);
 
 const isActive = (base: string): boolean =>
     base === '/admin' ? page.url === '/admin' : page.url.startsWith(base);
@@ -73,6 +102,10 @@ const isActive = (base: string): boolean =>
 const sectionTitle = computed(() => {
     if (page.url.startsWith('/admin/landing')) {
         return 'Landing';
+    }
+
+    if (page.url.startsWith('/admin/pricing')) {
+        return 'Pricing';
     }
 
     if (page.url.startsWith('/admin/modules')) {
@@ -171,16 +204,15 @@ function onLogout(): void {
 
                 <div class="flex flex-col gap-1">
                     <p class="back-nav-label">Modules</p>
-                    <template
-                        v-for="module in moduleCatalog"
-                        :key="module.slug"
-                    >
+                    <template v-for="module in moduleNav" :key="module.slug">
                         <Link
-                            v-if="module.slug === 'landing' && landingEnabled"
-                            :href="landingIndexUrl"
+                            v-if="module.href !== null"
+                            :href="module.href"
                             class="back-nav-item"
                             :aria-current="
-                                isActive('/admin/landing') ? 'page' : undefined
+                                isActive(`/admin/${module.slug}`)
+                                    ? 'page'
+                                    : undefined
                             "
                         >
                             {{ module.label }}
